@@ -16,6 +16,12 @@
         mFlowBorrowAmountToken: 0,
         mUSDCBorrowAmountToken: 0,
     
+        mFlowBorrowingtokenPrice: 0,   
+        mUSDCBorrowingtokenPrice: 0,
+    
+        mFlowBorrowingInterestRate: 0,    
+        mUSDCBorrowingInterestRate: 0, 
+
         depositeLimitFLOWToken: 0,
         depositeLimitUSDCToken: 0,
 
@@ -38,14 +44,19 @@
 
     function updatePriceAndInterest(){
         //update interestRate
-        TokenLendingPlace.mFlowInterestRate = TokenLendingPlace.mFlowBorrowAmountToken == 0 ? 0 : (TokenLendingPlace.mFlowBorrowAmountToken * TokenLendingPlace.mFlowtokenPrice / (TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowAmountToken * TokenLendingPlace.mFlowtokenPrice) / 365 / 24 / 60 / 30)
-        TokenLendingPlace.mUSDCInterestRate = TokenLendingPlace.mUSDCBorrowAmountToken == 0 ? 0 : (TokenLendingPlace.mUSDCBorrowAmountToken * TokenLendingPlace.mUSDCtokenPrice / (TokenLendingPlace.tokenVaultUSDC.balance + TokenLendingPlace.mUSDCBorrowAmountToken * TokenLendingPlace.mUSDCtokenPrice) / 365 / 24 / 60 / 30)
+        TokenLendingPlace.mFlowInterestRate = TokenLendingPlace.mFlowBorrowAmountToken == 0 ? 0 : getFlowLoanInterest() / 365 / 24 / 60 / 30
+        TokenLendingPlace.mUSDCInterestRate = TokenLendingPlace.mUSDCBorrowAmountToken == 0 ? 0 : getUSDCLoanInterest / 365 / 24 / 60 / 30
+
+        TokenLendingPlace.mFlowBorrowingInterestRate = TokenLendingPlace.mFlowBorrowAmountToken == 0 ? 0 : getFlowBorrowingInterest() / 365 / 24 / 60 / 30
+        TokenLendingPlace.mUSDCBorrowingInterestRate = TokenLendingPlace.mUSDCBorrowAmountToken == 0 ? 0 : getUSDCBorrowingInterest() / 365 / 24 / 60 / 30
 
         //update token price
         let delta = getCurrentBlock().height - TokenLendingPlace.finalBlock
 
         TokenLendingPlace.mFlowtokenPrice = TokenLendingPlace.mFlowtokenPrice + (delta * TokenLendingPlace.mFlowInterestRate)
         TokenLendingPlace.mUSDCtokenPrice = TokenLendingPlace.mUSDCtokenPrice + (delta * TokenLendingPlace.mUSDCInterestRate)
+        TokenLendingPlace.mFlowBorrowingtokenPrice = TokenLendingPlace.mFlowBorrowingtokenPrice + (delta * TokenLendingPlace.mFlowBorrowingInterestRate)
+        TokenLendingPlace.mUSDCBorrowingtokenPrice = TokenLendingPlace.mUSDCBorrowingtokenPrice + (delta * TokenLendingPlace.mUSDCBorrowingInterestRate)
         TokenLendingPlace.finalBlock = getCurrentBlock().height
     }
 
@@ -68,6 +79,12 @@
 
         TokenLendingPlace.mFlowBorrowAmountToken = 0.0
         TokenLendingPlace.mUSDCBorrowAmountToken = 0.0
+
+        TokenLendingPlace.mFlowBorrowingtokenPrice = 1.0
+        TokenLendingPlace.mUSDCBorrowingtokenPrice = 1.0
+    
+        TokenLendingPlace.mFlowBorrowingInterestRate = 0
+        TokenLendingPlace.mUSDCBorrowingInterestRate = 0
 
         TokenLendingPlace.depositeLimitFLOWToken = 100000.0
         TokenLendingPlace.depositeLimitUSDCToken = 1000000.0
@@ -115,25 +132,25 @@
                 //event
             }
     
-            // pub fun removeLiquidity(_amount: UFix64, _token: Int): @FungibleToken.Vault {
-            //     TokenLendingPlace.updatePriceAndInterest()
+            function removeLiquidity(_amount, _token) {
+                updatePriceAndInterest()//TokenLendingPlace.updatePriceAndInterest()
     
-            //     if(_token == 0) {
-            //         self.mFlow = self.mFlow - _amount
-            //         let token1Vault <- TokenLendingPlace.tokenVaultFlow.withdraw(amount: (_amount * TokenLendingPlace.mFlowtokenPrice)) 
+                if(_token == 0) {
+                    self.mFlow = self.mFlow - _amount
+                    //let token1Vault <- TokenLendingPlace.tokenVaultFlow.withdraw(amount: (_amount * TokenLendingPlace.mFlowtokenPrice)) 
     
-            //         //event
-            //          return <- token1Vault
-            //     } else if(_token == 1) {
-            //         self.mUSDC = self.mUSDC - _amount
-            //         let token1Vault <- TokenLendingPlace.tokenVaultUSDC.withdraw(amount: (_amount * TokenLendingPlace.mUSDCtokenPrice)) 
+                    //event
+                    //return <- token1Vault
+                } else if(_token == 1) {
+                    self.mUSDC = self.mUSDC - _amount
+                    //let token1Vault <- TokenLendingPlace.tokenVaultUSDC.withdraw(amount: (_amount * TokenLendingPlace.mUSDCtokenPrice)) 
     
-            //         //event
-            //          return <- token1Vault
-            //     }
+                    //event
+                    //eturn <- token1Vault
+                }
     
-            //     return <- TokenLendingPlace.tokenVaultUSDC.withdraw(amount: 0.0)
-            // }
+                //return <- TokenLendingPlace.tokenVaultUSDC.withdraw(amount: 0.0)
+            }
     
             function getBorrowingPower() {
                 
@@ -154,11 +171,23 @@
             }
 
             function getFlowBorrowingInterest() {
-                return TokenLendingPlace.mFlowBorrowAmountToken == 0 ? 0 : TokenLendingPlace.mFlowBorrowAmountToken * TokenLendingPlace.mFlowtokenPrice / (TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowAmountToken * TokenLendingPlace.mFlowtokenPrice)
+                return getFlowUtilizationRate() / 0.8 * (0.08 - 0) + 0.08
+            }
+
+            function getUSDCBorrowingInterest() { //Fake USDC Rate
+                return getFlowUtilizationRate() / 0.8 * (0.08 - 0) + 0.08
             }
 
             function getFlowLoanInterest() {
-                return getFlowBorrowingInterest() * 0.6
+                return getFlowBorrowingInterest() * getFlowUtilizationRate()
+            }
+
+            function getUSDCLoanInterest() { //Fake USDC Rate
+                return getFlowBorrowingInterest() * getFlowUtilizationRate()
+            }
+
+            function getFlowUtilizationRate() {
+                return TokenLendingPlace.mFlowBorrowAmountToken == 0 ? 0 : TokenLendingPlace.mFlowBorrowAmountToken * TokenLendingPlace.mFlowtokenPrice / (TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowAmountToken * TokenLendingPlace.mFlowtokenPrice)
             }
     
             function borrowFlow(_amount) {
@@ -169,7 +198,7 @@
                 
                 updatePriceAndInterest()//TokenLendingPlace.updatePriceAndInterest()
     
-                let realAmountofToken = _amount * TokenLendingPlace.mFlowtokenPrice
+                let realAmountofToken = _amount * TokenLendingPlace.mFlowBorrowingtokenPrice
                 TokenLendingPlace.mFlowBorrowAmountToken = _amount + TokenLendingPlace.mFlowBorrowAmountToken
     
                 self.myBorrowingmFlow = _amount + self.myBorrowingmFlow
@@ -186,8 +215,8 @@
     
                 updatePriceAndInterest()//TokenLendingPlace.updatePriceAndInterest()
     
-                TokenLendingPlace.mFlowBorrowAmountToken = TokenLendingPlace.mFlowBorrowAmountToken - (from.balance / TokenLendingPlace.mFlowtokenPrice)
-                self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.mFlowtokenPrice)
+                TokenLendingPlace.mFlowBorrowAmountToken = TokenLendingPlace.mFlowBorrowAmountToken - (from.balance / TokenLendingPlace.mFlowBorrowingtokenPrice)
+                self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.mFlowBorrowingtokenPrice)
     
                 //TokenLendingPlace.tokenVaultFlow.deposit(from: <- from )
                 TokenLendingPlace.tokenVaultFlow.balance = TokenLendingPlace.tokenVaultFlow.balance + from.balance
