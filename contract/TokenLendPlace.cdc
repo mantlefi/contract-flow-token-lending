@@ -44,7 +44,15 @@ pub contract TokenLendPlace {
     pub var depositeLimitUSDCToken: UFix64
     pub var depositeLimitBLTToken: UFix64
 
-
+    pub fun getTotalsupply(): {String: UFix64} {
+            return {"flowTotalSupply":TokenLendPlace.tokenVaultFlow.balance,"usdcTotalSupply": TokenLendPlace.tokenVaultUSDC.balance, "bltTotalSupply":TokenLendPlace.tokenVaultBLT.balance}
+    }
+    pub fun getDepositLimit(): {String: UFix64} {
+            return {"flowDepositLimit":TokenLendPlace.depositeLimitFLOWToken,"usdcDepositLimit": TokenLendPlace.depositeLimitUSDCToken, "bltDepositLimit":TokenLendPlace.depositeLimitBLTToken}
+    }
+    pub fun getTotalBorrow(): {String: UFix64} {
+            return {"flowTotalBorrow":TokenLendPlace.FlowBorrowAmountToken,"usdcTotalBorrow": TokenLendPlace.USDCBorrowAmountToken, "bltTotalBorrow":TokenLendPlace.BLTBorrowAmountToken}
+    }
     // Interface that users will publish for their Sale collection
     // that only exposes the methods that are supposed to be public
     //
@@ -55,10 +63,10 @@ pub contract TokenLendPlace {
         pub fun getmyBorrowingmFlow(): UFix64
         pub fun getmyBorrowingmUSDC(): UFix64
         pub fun getmyBorrowingmBLT(): UFix64
-        pub fun getMaxBorrowingPower(): UFix64?
+        pub fun getMaxBorrowingPower(): UFix64
         pub fun getBorrowingNow(): UFix64?
         //pub fun liquidate(token: FungibleToken): FungibleToken
-        //pub fun getBorrowingPower(): UInt64
+        pub fun getBorrowingPower(): UFix64
         //pub fun getMaxBorrowingPower(): UInt64
     }
 
@@ -127,6 +135,7 @@ pub contract TokenLendPlace {
         pub fun getmyBorrowingmBLT(): UFix64 {
             return self.myBorrowingmBLT
         }
+
    
         pub fun addLiquidity(from: @FungibleToken.Vault) {
             pre {
@@ -177,7 +186,7 @@ pub contract TokenLendPlace {
 
         }
 
-        pub fun getBorrowingPower(): UFix64? {
+        pub fun getBorrowingPower(): UFix64 {
             
             //美元計價
             let FlowPower = (self.mFlow - self.myBorrowingmFlow) * TokenLendPlace.mFlowtokenPrice * TokenLendPlace.FlowTokenRealPrice
@@ -187,7 +196,7 @@ pub contract TokenLendPlace {
             return FlowPower + USDCPower + BLTPower
         }
 
-        pub fun getMaxBorrowingPower(): UFix64? {
+        pub fun getMaxBorrowingPower(): UFix64 {
             
             //美元計價
             let FlowPower = self.mFlow * TokenLendPlace.mFlowtokenPrice * TokenLendPlace.FlowTokenRealPrice 
@@ -209,7 +218,7 @@ pub contract TokenLendPlace {
         pub fun borrowFlow(_amount: UFix64): @FungibleToken.Vault {
             pre {
                 TokenLendPlace.tokenVaultFlow.balance - TokenLendPlace.FlowBorrowAmountToken > _amount: "Amount minted must be greater than zero"
-                (self.getBorrowingPower() ?? 0.0 * 0.6) > (TokenLendPlace.FlowTokenRealPrice * _amount) : "Amount minted must be greater than zero"
+                (self.getBorrowingPower() * 0.6) > (TokenLendPlace.FlowTokenRealPrice * _amount) : "Amount minted must be greater than zero"
             }
 
             emit Borrowed(address: self.owner?.address)
