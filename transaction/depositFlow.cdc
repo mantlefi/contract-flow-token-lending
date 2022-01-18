@@ -25,15 +25,14 @@ transaction(amount: UFix64) {
         ?? panic("Could not borrow a reference to the owner's vault")
       
     self.temporaryVault <- vaultRef.withdraw(amount: amount) as! @FlowToken.Vault
-
-      self.lendingPlace = acct.borrow<&TokenLendPlace.TokenLandCollection>(from: /storage/TokenLendPlace)
-            ?? panic("Could not borrow owner's vault reference")
+    self.lendingPlace = acct.borrow<&TokenLendPlace.TokenLandCollection>(from: /storage/TokenLendPlace)
+            ?? panic("Could not borrow owner's vault reference2")
   }
 
   execute {
   
    
-    self.lendingPlace.addLiquidity(from: <-self.temporaryVault)
+   self.lendingPlace.addLiquidity(from: <-self.temporaryVault)
 
     log("Transfer succeeded!")
   }

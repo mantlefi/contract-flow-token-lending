@@ -33,7 +33,7 @@ transaction(amount: UFix64) {
   execute {
   
    
-    var vault <- self.lendingPlace.removeLiquidity(_amount: amount, _token: 1)
+    var vault <- self.lendingPlace.removeLiquidity(_amount: amount, _token: 0)
 
      self.vaultRef.deposit(from: <-vault)
 
