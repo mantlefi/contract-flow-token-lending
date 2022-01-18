@@ -15,16 +15,8 @@ import BloctoToken from 0x05
 pub contract TokenLendPlace {
 
     // Event that is emitted when a new NFT is put up for sale
-    pub event ForSale(id: UInt64, price: UFix64)
+    pub event Borrowed(address: Address?)
 
-    // Event that is emitted when the price of an NFT changes
-    pub event PriceChanged(id: UInt64, newPrice: UFix64)
-    
-    // Event that is emitted when a token is purchased
-    pub event TokenPurchased(id: UInt64, price: UFix64)
-
-    // Event that is emitted when a seller withdraws their NFT from the sale
-    pub event SaleWithdrawn(id: UInt64)
 
     access(contract) let tokenVaultFlow: @FlowToken.Vault
     access(contract) let tokenVaultUSDC: @USDCToken.Vault
@@ -63,6 +55,8 @@ pub contract TokenLendPlace {
         pub fun getmyBorrowingmFlow(): UFix64
         pub fun getmyBorrowingmUSDC(): UFix64
         pub fun getmyBorrowingmBLT(): UFix64
+        pub fun getMaxBorrowingPower(): UFix64?
+        pub fun getBorrowingNow(): UFix64?
         //pub fun liquidate(token: FungibleToken): FungibleToken
         //pub fun getBorrowingPower(): UInt64
         //pub fun getMaxBorrowingPower(): UInt64
@@ -202,12 +196,23 @@ pub contract TokenLendPlace {
 
             return FlowPower + USDCPower + BLTPower
         }
+        pub fun getBorrowingNow(): UFix64? {
+            
+            //美元計價
+            let FlowBorrow = self.myBorrowingmFlow * TokenLendPlace.mFlowtokenPrice * TokenLendPlace.FlowTokenRealPrice 
+            let USDCBorrow = self.myBorrowingmUSDC * TokenLendPlace.mUSDCtokenPrice * TokenLendPlace.USDCTokenRealPrice
+            let BLTBorrow = self.myBorrowingmBLT * TokenLendPlace.mBLTtokenPrice * TokenLendPlace.BLTTokenRealPrice
+
+            return FlowBorrow + USDCBorrow + BLTBorrow
+        }
 
         pub fun borrowFlow(_amount: UFix64): @FungibleToken.Vault {
             pre {
                 TokenLendPlace.tokenVaultFlow.balance - TokenLendPlace.FlowBorrowAmountToken > _amount: "Amount minted must be greater than zero"
                 (self.getBorrowingPower() ?? 0.0 * 0.6) > (TokenLendPlace.FlowTokenRealPrice * _amount) : "Amount minted must be greater than zero"
             }
+
+            emit Borrowed(address: self.owner?.address)
             
             //TokenLendPlace.updatePriceAndInterest()
 
