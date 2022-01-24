@@ -10,5 +10,5 @@ let acct1saleRef = account1.getCapability<&AnyResource{TokenLendPlace.TokenLandP
     var liquidationThreshold = acct1saleRef.getMaxBorrowingPower() *0.8
 
     return {"supplyBalance": acct1saleRef.getMaxBorrowingPower(), "borrowBalance": acct1saleRef.getBorrowingNow(), "borrowLimit": borrowLimit, "liquidationThreshold":liquidationThreshold,
-    "netValue": acct1saleRef.getBorrowingPower()}
+    "netValue": acct1saleRef.getBorrowingPower(), "borrowUtilization": acct1saleRef.getBorrowingNow()/acct1saleRef.getMaxBorrowingPower()}
 }
