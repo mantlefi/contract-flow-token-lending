@@ -3,33 +3,33 @@
 
     TokenLendingPlace = {
         mFlowtokenPrice: 0,   //price only increase
-        mUSDCtokenPrice: 0,
+        mFUSDtokenPrice: 0,
     
         FlowTokenRealPrice: 0,
-        USDCTokenRealPrice: 0,
+        FUSDTokenRealPrice: 0,
     
         mFlowInterestRate: 0,    //delta of mFlowtokenPrice
-        mUSDCInterestRate: 0, 
+        mFUSDInterestRate: 0, 
     
         finalBlock: 0,
     
         mFlowBorrowAmountToken: 0,
-        mUSDCBorrowAmountToken: 0,
+        mFUSDBorrowAmountToken: 0,
     
         mFlowBorrowingtokenPrice: 0,   
-        mUSDCBorrowingtokenPrice: 0,
+        mFUSDBorrowingtokenPrice: 0,
     
         mFlowBorrowingInterestRate: 0,    
-        mUSDCBorrowingInterestRate: 0, 
+        mFUSDBorrowingInterestRate: 0, 
 
         depositeLimitFLOWToken: 0,
-        depositeLimitUSDCToken: 0,
+        depositeLimitFUSDToken: 0,
 
         tokenVaultFlow: {
             balance: 0
         },
 
-        tokenVaultUSDC: {
+        tokenVaultFUSD: {
             balance: 0
         },
         tempBlock: 0
@@ -45,49 +45,49 @@
     function updatePriceAndInterest(){
         //update interestRate
         TokenLendingPlace.mFlowInterestRate = TokenLendingPlace.mFlowBorrowAmountToken == 0 ? 0 : getFlowLoanInterest() / 365 / 24 / 60 / 30
-        TokenLendingPlace.mUSDCInterestRate = TokenLendingPlace.mUSDCBorrowAmountToken == 0 ? 0 : getUSDCLoanInterest / 365 / 24 / 60 / 30
+        TokenLendingPlace.mFUSDInterestRate = TokenLendingPlace.mFUSDBorrowAmountToken == 0 ? 0 : getFUSDLoanInterest / 365 / 24 / 60 / 30
 
         TokenLendingPlace.mFlowBorrowingInterestRate = TokenLendingPlace.mFlowBorrowAmountToken == 0 ? 0 : getFlowBorrowingInterest() / 365 / 24 / 60 / 30
-        TokenLendingPlace.mUSDCBorrowingInterestRate = TokenLendingPlace.mUSDCBorrowAmountToken == 0 ? 0 : getUSDCBorrowingInterest() / 365 / 24 / 60 / 30
+        TokenLendingPlace.mFUSDBorrowingInterestRate = TokenLendingPlace.mFUSDBorrowAmountToken == 0 ? 0 : getFUSDBorrowingInterest() / 365 / 24 / 60 / 30
 
         //update token price
         let delta = getCurrentBlock().height - TokenLendingPlace.finalBlock
 
         TokenLendingPlace.mFlowtokenPrice = TokenLendingPlace.mFlowtokenPrice + (delta * TokenLendingPlace.mFlowInterestRate)
-        TokenLendingPlace.mUSDCtokenPrice = TokenLendingPlace.mUSDCtokenPrice + (delta * TokenLendingPlace.mUSDCInterestRate)
+        TokenLendingPlace.mFUSDtokenPrice = TokenLendingPlace.mFUSDtokenPrice + (delta * TokenLendingPlace.mFUSDInterestRate)
         TokenLendingPlace.mFlowBorrowingtokenPrice = TokenLendingPlace.mFlowBorrowingtokenPrice + (delta * TokenLendingPlace.mFlowBorrowingInterestRate)
-        TokenLendingPlace.mUSDCBorrowingtokenPrice = TokenLendingPlace.mUSDCBorrowingtokenPrice + (delta * TokenLendingPlace.mUSDCBorrowingInterestRate)
+        TokenLendingPlace.mFUSDBorrowingtokenPrice = TokenLendingPlace.mFUSDBorrowingtokenPrice + (delta * TokenLendingPlace.mFUSDBorrowingInterestRate)
         TokenLendingPlace.finalBlock = getCurrentBlock().height
     }
 
     //TODO, waiting real feed source, and limit certain caller.
-    function updatePricefromOracle(_FlowPrice, _USDCPrice){
+    function updatePricefromOracle(_FlowPrice, _FUSDPrice){
       self.FlowTokenRealPrice = _FlowPrice
-      self.USDCTokenRealPrice = _USDCPrice
+      self.FUSDTokenRealPrice = _FUSDPrice
     }
 
 
     function init() {
 
         TokenLendingPlace.mFlowInterestRate = 0
-        TokenLendingPlace.mUSDCInterestRate = 0
+        TokenLendingPlace.mFUSDInterestRate = 0
         TokenLendingPlace.mFlowtokenPrice = 1.0
-        TokenLendingPlace.mUSDCtokenPrice = 1.0
+        TokenLendingPlace.mFUSDtokenPrice = 1.0
         TokenLendingPlace.FlowTokenRealPrice = 10.0
-        TokenLendingPlace.USDCTokenRealPrice = 1.0
+        TokenLendingPlace.FUSDTokenRealPrice = 1.0
         TokenLendingPlace.finalBlock = 0 //getCurrentBlock().height
 
         TokenLendingPlace.mFlowBorrowAmountToken = 0.0
-        TokenLendingPlace.mUSDCBorrowAmountToken = 0.0
+        TokenLendingPlace.mFUSDBorrowAmountToken = 0.0
 
         TokenLendingPlace.mFlowBorrowingtokenPrice = 1.0
-        TokenLendingPlace.mUSDCBorrowingtokenPrice = 1.0
+        TokenLendingPlace.mFUSDBorrowingtokenPrice = 1.0
     
         TokenLendingPlace.mFlowBorrowingInterestRate = 0
-        TokenLendingPlace.mUSDCBorrowingInterestRate = 0
+        TokenLendingPlace.mFUSDBorrowingInterestRate = 0
 
         TokenLendingPlace.depositeLimitFLOWToken = 100000.0
-        TokenLendingPlace.depositeLimitUSDCToken = 1000000.0
+        TokenLendingPlace.depositeLimitFUSDToken = 1000000.0
   }
 
 
@@ -97,23 +97,23 @@
     //function TokenLandCollection {
         self = {
             mFlow: 0,
-            mUSDC: 0,
+            mFUSD: 0,
     
             myBorrowingmFlow: 0,
-            myBorrowingmUSDC: 0
+            myBorrowingmFUSD: 0
             }
     
             // init () {
             //     self.mFlow = 0.0
-            //     self.mUSDC = 0.0
+            //     self.mFUSD = 0.0
     
             //     self.myBorrowingmFlow = 0.0
-            //     self.myBorrowingmUSDC = 0.0
+            //     self.myBorrowingmFUSD = 0.0
             // }
        
             function addLiquidity(from) {
                 //pre {
-                    //only allow the type of from is Flow and USDC Vault token
+                    //only allow the type of from is Flow and FUSD Vault token
                 ///}
     
                 updatePriceAndInterest()//TokenLendingPlace.updatePriceAndInterest()
@@ -124,8 +124,8 @@
                     self.mFlow = self.mFlow + (balance / TokenLendingPlace.mFlowtokenPrice)
                 } else if(from.type == "usdc") {
                     let balance = from.balance
-                    TokenLendingPlace.tokenVaultUSDC.balance = TokenLendingPlace.tokenVaultUSDC.balance + from.balance
-                    self.mUSDC = self.mUSDC + (balance / TokenLendingPlace.mUSDCtokenPrice)
+                    TokenLendingPlace.tokenVaultFUSD.balance = TokenLendingPlace.tokenVaultFUSD.balance + from.balance
+                    self.mFUSD = self.mFUSD + (balance / TokenLendingPlace.mFUSDtokenPrice)
                 }
                 
                 console.log("存錢: " + from.type + "  " + from.balance);
@@ -142,39 +142,39 @@
                     //event
                     //return <- token1Vault
                 } else if(_token == 1) {
-                    self.mUSDC = self.mUSDC - _amount
-                    //let token1Vault <- TokenLendingPlace.tokenVaultUSDC.withdraw(amount: (_amount * TokenLendingPlace.mUSDCtokenPrice)) 
+                    self.mFUSD = self.mFUSD - _amount
+                    //let token1Vault <- TokenLendingPlace.tokenVaultFUSD.withdraw(amount: (_amount * TokenLendingPlace.mFUSDtokenPrice)) 
     
                     //event
                     //eturn <- token1Vault
                 }
     
-                //return <- TokenLendingPlace.tokenVaultUSDC.withdraw(amount: 0.0)
+                //return <- TokenLendingPlace.tokenVaultFUSD.withdraw(amount: 0.0)
             }
     
             function getBorrowingPower() {
                 
                 //美元計價
                 let FlowPower = (self.mFlow - self.myBorrowingmFlow) * TokenLendingPlace.mFlowtokenPrice * TokenLendingPlace.FlowTokenRealPrice
-                let USDCPower = (self.mUSDC - self.myBorrowingmUSDC) * TokenLendingPlace.mUSDCtokenPrice * TokenLendingPlace.USDCTokenRealPrice 
+                let FUSDPower = (self.mFUSD - self.myBorrowingmFUSD) * TokenLendingPlace.mFUSDtokenPrice * TokenLendingPlace.FUSDTokenRealPrice 
     
-                return FlowPower + USDCPower
+                return FlowPower + FUSDPower
             }
     
             function getMaxBorrowingPower() {
                 
                 //美元計價
                 let FlowPower = self.mFlow * TokenLendingPlace.mFlowtokenPrice * TokenLendingPlace.FlowTokenRealPrice 
-                let USDCPower = self.mUSDC * TokenLendingPlace.mUSDCtokenPrice * TokenLendingPlace.USDCTokenRealPrice
+                let FUSDPower = self.mFUSD * TokenLendingPlace.mFUSDtokenPrice * TokenLendingPlace.FUSDTokenRealPrice
     
-                return FlowPower + USDCPower
+                return FlowPower + FUSDPower
             }
 
             function getFlowBorrowingInterest() {
                 return getFlowUtilizationRate() / 0.8 * (0.08 - 0) + 0.08
             }
 
-            function getUSDCBorrowingInterest() { //Fake USDC Rate
+            function getFUSDBorrowingInterest() { //Fake FUSD Rate
                 return getFlowUtilizationRate() / 0.8 * (0.08 - 0) + 0.08
             }
 
@@ -182,7 +182,7 @@
                 return getFlowBorrowingInterest() * getFlowUtilizationRate()
             }
 
-            function getUSDCLoanInterest() { //Fake USDC Rate
+            function getFUSDLoanInterest() { //Fake FUSD Rate
                 return getFlowBorrowingInterest() * getFlowUtilizationRate()
             }
 
@@ -242,13 +242,13 @@
             //     }
     
             //     //usdc in flow out
-            //     if( from.getType() == Type<@USDCToken.Vault>()) {
-            //         TokenLendingPlace.USDCBorrowAmountToken = TokenLendingPlace.USDCBorrowAmountToken - from.balance
-            //         self.myBorrowingmUSDC = self.myBorrowingmUSDC - (from.balance / TokenLendingPlace.mUSDCtokenPrice)
+            //     if( from.getType() == Type<@FUSDToken.Vault>()) {
+            //         TokenLendingPlace.FUSDBorrowAmountToken = TokenLendingPlace.FUSDBorrowAmountToken - from.balance
+            //         self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.mFUSDtokenPrice)
                     
             //         let repaymoney = from.balance * 1.05 / TokenLendingPlace.FlowTokenRealPrice
     
-            //         TokenLendingPlace.tokenVaultUSDC.deposit(from: <- from)
+            //         TokenLendingPlace.tokenVaultFUSD.deposit(from: <- from)
     
             //         self.mFlow = self.mFlow - (repaymoney / TokenLendingPlace.mFlowtokenPrice)
     

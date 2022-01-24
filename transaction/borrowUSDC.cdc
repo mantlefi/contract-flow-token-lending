@@ -1,4 +1,4 @@
-import USDCToken from 0x03
+import FUSD from 0x03
 import FungibleToken from 0x01
 import TokenLendPlace from 0x04
 
@@ -10,7 +10,7 @@ transaction(amount: UFix64) {
 
 
   // Temporary Vault object that holds the balance that is being transferred
-  var vaultRef: &USDCToken.Vault
+  var vaultRef: &FUSD.Vault
   var lendingPlace: &TokenLendPlace.TokenLandCollection
 
   prepare(acct: AuthAccount) {
@@ -21,7 +21,7 @@ transaction(amount: UFix64) {
         }
     // withdraw tokens from your vault by borrowing a reference to it
     // and calling the withdraw function with that reference
-     self.vaultRef = acct.borrow<&USDCToken.Vault>(from: /storage/USDCTokenVault)
+     self.vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/FUSDVault)
         ?? panic("Could not borrow a reference to the owner's vault")
       
     //self.temporaryVault <- vaultRef.withdraw(amount: 20.0) as! @FlowToken.Vault
@@ -33,7 +33,7 @@ transaction(amount: UFix64) {
   execute {
   
    
-    var vault <- self.lendingPlace.borrowUSDC(_amount: amount)
+    var vault <- self.lendingPlace.borrowFUSD(_amount: amount)
 
      self.vaultRef.deposit(from: <-vault)
 
