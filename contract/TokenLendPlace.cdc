@@ -5,36 +5,58 @@ import BloctoToken from 0x05
 
 pub contract TokenLendPlace {
 
-    // Event that is emitted when a new NFT is put up for sale
+    // Event that is emitted when 有人被清算時 (補上，清算幣種-入，金額，回傳金額-出）
     pub event Borrowed(address: Address?)
 
+    //補上事件 - 有人進行deposite(Address, 幣種, 金額）
 
+    //補上事件 - 有人進行withdraw(Address, 幣種, 金額）
+
+    //補上事件 - 有人進行borrow(Address, 幣種, 金額）
+
+    //補上事件 - 有人進行borrow(Address, 幣種, 金額, total borrow）
+
+    //補上事件 - 有人進行repay(Address, 幣種, 金額, ???, total borrow）
+
+    //補上事件 - 有人進行清算(Address, 幣種, 金額, total borrow）
+
+    //以上事件請參考：https://compound.finance/docs/ctokens#key-events
+
+
+    //協議中存放真實代幣的地方
     access(contract) let tokenVaultFlow: @FlowToken.Vault
     access(contract) let tokenVaultFUSD: @FUSD.Vault
     access(contract) let tokenVaultBLT: @BloctoToken.Vault
 
-    pub var mFlowtokenPrice: UFix64    //price only increase
+    //協議中的代幣皆採用 mToken 為代表，mToken 價格僅會往上升，而不會下降。
+    pub var mFlowtokenPrice: UFix64 
     pub var mFUSDtokenPrice: UFix64
     pub var mBLTtokenPrice: UFix64
 
+    //協議中各項token的真實價格，由預言機與Admin進行更新
     pub var FlowTokenRealPrice: UFix64
     pub var FUSDRealPrice: UFix64
     pub var BLTTokenRealPrice: UFix64
 
+    //協議中mtoken更新的斜率
     pub var mFlowInterestRate: UFix64
     pub var mFUSDInterestRate: UFix64 
     pub var mBLTInterestRate: UFix64 
 
+    //協議中mToken最後更新的時間
     pub var finalTimestamp: UFix64
 
+    //協議中目前代幣被借出的總數量，此金額將影響利率的計算
     pub var FlowBorrowAmountToken: UFix64
     pub var FUSDBorrowAmountToken: UFix64
     pub var BLTBorrowAmountToken: UFix64
 
+    //協議中限制代幣存放與領出的數量
     pub var depositeLimitFLOWToken: UFix64
     pub var depositeLimitFUSD: UFix64
     pub var depositeLimitBLTToken: UFix64
 
+    //協議中各項利率優化的參與指標
     pub var optimalUtilizationRate: UFix64
     pub var optimalBorrowApy: UFix64
 
@@ -45,6 +67,7 @@ pub contract TokenLendPlace {
             return 0.0
         }
     }
+
     pub fun getFUSDBorrowPercent(): UFix64 {
         if(TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken != 0.0){
             return TokenLendPlace.FUSDBorrowAmountToken / (TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken)
@@ -52,6 +75,7 @@ pub contract TokenLendPlace {
             return 0.0
         }
     }
+
     pub fun getBltBorrowPercent(): UFix64 {
         if(TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken != 0.0){
             return TokenLendPlace.BLTBorrowAmountToken / (TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken)
@@ -59,19 +83,24 @@ pub contract TokenLendPlace {
             return 0.0
         }
     }
+
     pub fun getTotalsupply(): {String: UFix64} {
             return {"flowTotalSupply":TokenLendPlace.tokenVaultFlow.balance + TokenLendPlace.FlowBorrowAmountToken,"fusdTotalSupply": TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken, "bltTotalSupply":TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken}
     }
+
     pub fun getDepositLimit(): {String: UFix64} {
             return {"flowDepositLimit":TokenLendPlace.depositeLimitFLOWToken,"fusdDepositLimit": TokenLendPlace.depositeLimitFUSD, "bltDepositLimit":TokenLendPlace.depositeLimitBLTToken}
     }
+
     pub fun getTotalBorrow(): {String: UFix64} {
             return {"flowTotalBorrow":TokenLendPlace.FlowBorrowAmountToken,"fusdTotalBorrow": TokenLendPlace.FUSDBorrowAmountToken, "bltTotalBorrow":TokenLendPlace.BLTBorrowAmountToken}
     }
+
     pub fun getTokenPrice(): {String: UFix64} {
             return {"flowTokenPrice":TokenLendPlace.FlowTokenRealPrice,"fusdTokenPrice": TokenLendPlace.FUSDRealPrice, "bltTokenPrice":TokenLendPlace.BLTTokenRealPrice}
     }
-    // Interface that users will publish for their Sale collection
+
+    // Interface that users will publish for their lending collection
     // that only exposes the methods that are supposed to be public
     //
     pub resource interface TokenLandPublic {
@@ -86,6 +115,7 @@ pub contract TokenLendPlace {
         pub fun getBorrowingPower(): UFix64
     }
 
+    //協議中更新 mToken 與利率的方法，任何有更動協議裡金額的部分（deposite, repay, withdrea, borrow, liquidty)都會呼叫此方法。在此方法中我們即時更新最新的利率。
     access(contract) fun updatePriceAndInterest(){
       //update token price
       //let delta = getCurrentBlock().timestamp - TokenLendPlace.finalTimestamp
@@ -129,10 +159,9 @@ pub contract TokenLendPlace {
       self.BLTTokenRealPrice = _BLTPrice
     }
 
-    // SaleCollection
+    // LendingCollection
     //
-    // NFT Collection object that allows a user to put their NFT up for sale
-    // where others can send fungible tokens to purchase it
+    // Token Collection object 紀錄了用戶的所有數據，用戶透過此 collection 來參與協議
     //
     pub resource TokenLandCollection: TokenLandPublic {
 
@@ -157,18 +186,23 @@ pub contract TokenLendPlace {
         pub fun getmFlow(): UFix64 {
             return self.mFlow
         }
+
         pub fun getmFUSD(): UFix64 {
             return self.mFUSD
         }
+
         pub fun getmBLT(): UFix64 {
             return self.mBLT
         }
+
         pub fun getmyBorrowingmFlow(): UFix64 {
             return self.myBorrowingmFlow
         }
+
         pub fun getmyBorrowingmFUSD(): UFix64 {
             return self.myBorrowingmFUSD
         }
+
         pub fun getmyBorrowingmBLT(): UFix64 {
             return self.myBorrowingmBLT
         }
@@ -266,6 +300,7 @@ pub contract TokenLendPlace {
             TokenLendPlace.updatePriceAndInterest()
             return <- token1Vault
         }
+
         pub fun borrowFUSD(_amount: UFix64): @FungibleToken.Vault {
             pre {
                 TokenLendPlace.tokenVaultFUSD.balance - TokenLendPlace.FUSDBorrowAmountToken > _amount: "Amount minted must be greater than zero"
@@ -283,6 +318,7 @@ pub contract TokenLendPlace {
             TokenLendPlace.updatePriceAndInterest()
             return <- token1Vault
         }
+
         pub fun borrowBLT(_amount: UFix64): @FungibleToken.Vault {
             pre {
                 TokenLendPlace.tokenVaultBLT.balance - TokenLendPlace.BLTBorrowAmountToken > _amount: "Amount minted must be greater than zero"
@@ -312,6 +348,7 @@ pub contract TokenLendPlace {
             TokenLendPlace.tokenVaultFlow.deposit(from: <- from )
             TokenLendPlace.updatePriceAndInterest()
         }
+
         pub fun repayFUSD(from: @FUSD.Vault){
             //unlock the borrowing power
 
@@ -322,6 +359,7 @@ pub contract TokenLendPlace {
             TokenLendPlace.tokenVaultFUSD.deposit(from: <- from )
             TokenLendPlace.updatePriceAndInterest()
         }
+
         pub fun repayBLT(from: @BloctoToken.Vault){
             //unlock the borrowing power
             TokenLendPlace.BLTBorrowAmountToken = TokenLendPlace.BLTBorrowAmountToken - from.balance
@@ -330,7 +368,6 @@ pub contract TokenLendPlace {
             TokenLendPlace.tokenVaultBLT.deposit(from: <- from )
             TokenLendPlace.updatePriceAndInterest()
         }
-
 
         pub fun liquidateFlow(from: @FungibleToken.Vault, liquidatorVault: &TokenLandCollection){
             
@@ -377,12 +414,15 @@ pub contract TokenLendPlace {
             }
             TokenLendPlace.updatePriceAndInterest()
         }
+
         access(self) fun depositemFlow(from: UFix64) {
             self.mFlow = self.mFlow + from
         }
+
         access(self) fun depositemFUSD(from: UFix64) {
             self.mFUSD = self.mFUSD + from
         }
+        
         access(self) fun depositemBLT(from: UFix64) {
             self.mBLT = self.mBLT + from
         }
@@ -419,8 +459,6 @@ pub contract TokenLendPlace {
 
         self.optimalUtilizationRate = 0.8
         self.optimalBorrowApy = 0.08
-
-
   }
 }
  
