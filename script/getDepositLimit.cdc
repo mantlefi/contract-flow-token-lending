@@ -1,6 +1,6 @@
-import TokenLendPlace from 0x04
+import TokenLendingPlace from 0x04
 
 pub fun main(): {String: UFix64} {
 
-    return TokenLendPlace.getDepositLimit()
+    return TokenLendingPlace.getDepositLimit()
 }

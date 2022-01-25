@@ -1,9 +1,9 @@
-import TokenLendPlace from 0x04
+import TokenLendingPlace from 0x04
 
 pub fun main(accountAddr: Address): {String:UFix64?} {
     // Get the public account object for account 0x01
-    let account1 = getAccount(accountAddr)
-    let acct1saleRef = account1.getCapability<&AnyResource{TokenLendPlace.TokenLandPublic}>(/public/TokenLendPlace)
+    let account = getAccount(accountAddr)
+    let acct1saleRef = account.getCapability<&AnyResource{TokenLendingPlace.TokenLendingPublic}>(TokenLendingPlace.CollectionPublicPath)
         .borrow()
         ?? panic("Could not borrow acct2 nft sale reference")
 

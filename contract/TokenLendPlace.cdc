@@ -3,7 +3,7 @@ import FlowToken from 0x02
 import FUSD from 0x03
 import BloctoToken from 0x05
 
-pub contract TokenLendPlace {
+pub contract TokenLendingPlace {
 
     // Event that is emitted when 有人被清算時 (補上，清算幣種-入，金額，回傳金額-出）
     pub event Borrowed(address: Address?)
@@ -60,50 +60,53 @@ pub contract TokenLendPlace {
     pub var optimalUtilizationRate: UFix64
     pub var optimalBorrowApy: UFix64
 
+    pub let CollectionStoragePath: StoragePath
+    pub let CollectionPublicPath: PublicPath
+
     pub fun getFlowBorrowPercent(): UFix64 {
-        if(TokenLendPlace.tokenVaultFlow.balance + TokenLendPlace.FlowBorrowAmountToken != 0.0){
-            return TokenLendPlace.FlowBorrowAmountToken / (TokenLendPlace.tokenVaultFlow.balance + TokenLendPlace.FlowBorrowAmountToken)
+        if(TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.FlowBorrowAmountToken != 0.0){
+            return TokenLendingPlace.FlowBorrowAmountToken / (TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.FlowBorrowAmountToken)
         }else {
             return 0.0
         }
     }
 
     pub fun getFUSDBorrowPercent(): UFix64 {
-        if(TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken != 0.0){
-            return TokenLendPlace.FUSDBorrowAmountToken / (TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken)
+        if(TokenLendingPlace.tokenVaultFUSD.balance + TokenLendingPlace.FUSDBorrowAmountToken != 0.0){
+            return TokenLendingPlace.FUSDBorrowAmountToken / (TokenLendingPlace.tokenVaultFUSD.balance + TokenLendingPlace.FUSDBorrowAmountToken)
         }else{
             return 0.0
         }
     }
 
     pub fun getBltBorrowPercent(): UFix64 {
-        if(TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken != 0.0){
-            return TokenLendPlace.BLTBorrowAmountToken / (TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken)
+        if(TokenLendingPlace.tokenVaultBLT.balance + TokenLendingPlace.BLTBorrowAmountToken != 0.0){
+            return TokenLendingPlace.BLTBorrowAmountToken / (TokenLendingPlace.tokenVaultBLT.balance + TokenLendingPlace.BLTBorrowAmountToken)
         }else{
             return 0.0
         }
     }
 
     pub fun getTotalsupply(): {String: UFix64} {
-            return {"flowTotalSupply":TokenLendPlace.tokenVaultFlow.balance + TokenLendPlace.FlowBorrowAmountToken,"fusdTotalSupply": TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken, "bltTotalSupply":TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken}
+            return {"flowTotalSupply":TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.FlowBorrowAmountToken,"fusdTotalSupply": TokenLendingPlace.tokenVaultFUSD.balance + TokenLendingPlace.FUSDBorrowAmountToken, "bltTotalSupply":TokenLendingPlace.tokenVaultBLT.balance + TokenLendingPlace.BLTBorrowAmountToken}
     }
 
     pub fun getDepositLimit(): {String: UFix64} {
-            return {"flowDepositLimit":TokenLendPlace.depositeLimitFLOWToken,"fusdDepositLimit": TokenLendPlace.depositeLimitFUSD, "bltDepositLimit":TokenLendPlace.depositeLimitBLTToken}
+            return {"flowDepositLimit":TokenLendingPlace.depositeLimitFLOWToken,"fusdDepositLimit": TokenLendingPlace.depositeLimitFUSD, "bltDepositLimit":TokenLendingPlace.depositeLimitBLTToken}
     }
 
     pub fun getTotalBorrow(): {String: UFix64} {
-            return {"flowTotalBorrow":TokenLendPlace.FlowBorrowAmountToken,"fusdTotalBorrow": TokenLendPlace.FUSDBorrowAmountToken, "bltTotalBorrow":TokenLendPlace.BLTBorrowAmountToken}
+            return {"flowTotalBorrow":TokenLendingPlace.FlowBorrowAmountToken,"fusdTotalBorrow": TokenLendingPlace.FUSDBorrowAmountToken, "bltTotalBorrow":TokenLendingPlace.BLTBorrowAmountToken}
     }
 
     pub fun getTokenPrice(): {String: UFix64} {
-            return {"flowTokenPrice":TokenLendPlace.FlowTokenRealPrice,"fusdTokenPrice": TokenLendPlace.FUSDRealPrice, "bltTokenPrice":TokenLendPlace.BLTTokenRealPrice}
+            return {"flowTokenPrice":TokenLendingPlace.FlowTokenRealPrice,"fusdTokenPrice": TokenLendingPlace.FUSDRealPrice, "bltTokenPrice":TokenLendingPlace.BLTTokenRealPrice}
     }
 
     // Interface that users will publish for their lending collection
     // that only exposes the methods that are supposed to be public
     //
-    pub resource interface TokenLandPublic {
+    pub resource interface TokenLendingPublic {
         pub fun getmFlow(): UFix64
         pub fun getmFUSD(): UFix64
         pub fun getmBLT(): UFix64
@@ -118,35 +121,35 @@ pub contract TokenLendPlace {
     //協議中更新 mToken 與利率的方法，任何有更動協議裡金額的部分（deposite, repay, withdrea, borrow, liquidty)都會呼叫此方法。在此方法中我們即時更新最新的利率。
     access(contract) fun updatePriceAndInterest(){
       //update token price
-      //let delta = getCurrentBlock().timestamp - TokenLendPlace.finalTimestamp
+      //let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
       let delta = 60.0
-      TokenLendPlace.mFlowtokenPrice = TokenLendPlace.mFlowtokenPrice + (delta * TokenLendPlace.mFlowInterestRate /( 365.0 * 24.0 * 60.0 * 60.0))
-      TokenLendPlace.mFUSDtokenPrice = TokenLendPlace.mFUSDtokenPrice + (delta * TokenLendPlace.mFUSDInterestRate /( 365.0 * 24.0 * 60.0 * 60.0))
-      TokenLendPlace.mBLTtokenPrice = TokenLendPlace.mBLTtokenPrice + (delta * TokenLendPlace.mBLTInterestRate /( 365.0 * 24.0 * 60.0 * 60.0))
+      TokenLendingPlace.mFlowtokenPrice = TokenLendingPlace.mFlowtokenPrice + (delta * TokenLendingPlace.mFlowInterestRate /( 365.0 * 24.0 * 60.0 * 60.0))
+      TokenLendingPlace.mFUSDtokenPrice = TokenLendingPlace.mFUSDtokenPrice + (delta * TokenLendingPlace.mFUSDInterestRate /( 365.0 * 24.0 * 60.0 * 60.0))
+      TokenLendingPlace.mBLTtokenPrice = TokenLendingPlace.mBLTtokenPrice + (delta * TokenLendingPlace.mBLTInterestRate /( 365.0 * 24.0 * 60.0 * 60.0))
 
-      //TokenLendPlace.finalTimestamp = getCurrentBlock().timestamp
-      TokenLendPlace.finalTimestamp = 0.0
+      //TokenLendingPlace.finalTimestamp = getCurrentBlock().timestamp
+      TokenLendingPlace.finalTimestamp = 0.0
 
       //update interestRate
-      if(TokenLendPlace.tokenVaultFlow.balance + TokenLendPlace.FlowBorrowAmountToken != 0.0){
-        if(TokenLendPlace.FlowBorrowAmountToken / (TokenLendPlace.tokenVaultFlow.balance + TokenLendPlace.FlowBorrowAmountToken) < TokenLendPlace.optimalUtilizationRate){
-            TokenLendPlace.mFlowInterestRate = TokenLendPlace.FlowBorrowAmountToken / (TokenLendPlace.tokenVaultFlow.balance + TokenLendPlace.FlowBorrowAmountToken) / TokenLendPlace.optimalUtilizationRate * TokenLendPlace.optimalBorrowApy
+      if(TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.FlowBorrowAmountToken != 0.0){
+        if(TokenLendingPlace.FlowBorrowAmountToken / (TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.FlowBorrowAmountToken) < TokenLendingPlace.optimalUtilizationRate){
+            TokenLendingPlace.mFlowInterestRate = TokenLendingPlace.FlowBorrowAmountToken / (TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.FlowBorrowAmountToken) / TokenLendingPlace.optimalUtilizationRate * TokenLendingPlace.optimalBorrowApy
         }else{
-            TokenLendPlace.mFlowInterestRate = ((TokenLendPlace.FlowBorrowAmountToken / (TokenLendPlace.tokenVaultFlow.balance + TokenLendPlace.FlowBorrowAmountToken)) - TokenLendPlace.optimalUtilizationRate)/(1.0-TokenLendPlace.optimalUtilizationRate)*(1.0-TokenLendPlace.optimalUtilizationRate)+TokenLendPlace.optimalUtilizationRate
+            TokenLendingPlace.mFlowInterestRate = ((TokenLendingPlace.FlowBorrowAmountToken / (TokenLendingPlace.tokenVaultFlow.balance + TokenLendingPlace.FlowBorrowAmountToken)) - TokenLendingPlace.optimalUtilizationRate)/(1.0-TokenLendingPlace.optimalUtilizationRate)*(1.0-TokenLendingPlace.optimalUtilizationRate)+TokenLendingPlace.optimalUtilizationRate
         }
       }
-      if(TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken != 0.0){
-        if(TokenLendPlace.FUSDBorrowAmountToken / (TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken) < TokenLendPlace.optimalUtilizationRate){
-            TokenLendPlace.mFUSDInterestRate = TokenLendPlace.FUSDBorrowAmountToken / (TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken)/ TokenLendPlace.optimalUtilizationRate*TokenLendPlace.optimalBorrowApy
+      if(TokenLendingPlace.tokenVaultFUSD.balance + TokenLendingPlace.FUSDBorrowAmountToken != 0.0){
+        if(TokenLendingPlace.FUSDBorrowAmountToken / (TokenLendingPlace.tokenVaultFUSD.balance + TokenLendingPlace.FUSDBorrowAmountToken) < TokenLendingPlace.optimalUtilizationRate){
+            TokenLendingPlace.mFUSDInterestRate = TokenLendingPlace.FUSDBorrowAmountToken / (TokenLendingPlace.tokenVaultFUSD.balance + TokenLendingPlace.FUSDBorrowAmountToken)/ TokenLendingPlace.optimalUtilizationRate*TokenLendingPlace.optimalBorrowApy
         }else{
-            TokenLendPlace.mFUSDInterestRate = ((TokenLendPlace.FUSDBorrowAmountToken / (TokenLendPlace.tokenVaultFUSD.balance + TokenLendPlace.FUSDBorrowAmountToken)) - TokenLendPlace.optimalUtilizationRate)/(1.0-TokenLendPlace.optimalUtilizationRate)*(1.0-TokenLendPlace.optimalUtilizationRate)+TokenLendPlace.optimalUtilizationRate
+            TokenLendingPlace.mFUSDInterestRate = ((TokenLendingPlace.FUSDBorrowAmountToken / (TokenLendingPlace.tokenVaultFUSD.balance + TokenLendingPlace.FUSDBorrowAmountToken)) - TokenLendingPlace.optimalUtilizationRate)/(1.0-TokenLendingPlace.optimalUtilizationRate)*(1.0-TokenLendingPlace.optimalUtilizationRate)+TokenLendingPlace.optimalUtilizationRate
         }
       }
-      if(TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken != 0.0){
-        if(TokenLendPlace.BLTBorrowAmountToken / (TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken) < TokenLendPlace.optimalUtilizationRate){
-            TokenLendPlace.mBLTInterestRate = TokenLendPlace.BLTBorrowAmountToken / (TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken)/ TokenLendPlace.optimalUtilizationRate*TokenLendPlace.optimalBorrowApy
+      if(TokenLendingPlace.tokenVaultBLT.balance + TokenLendingPlace.BLTBorrowAmountToken != 0.0){
+        if(TokenLendingPlace.BLTBorrowAmountToken / (TokenLendingPlace.tokenVaultBLT.balance + TokenLendingPlace.BLTBorrowAmountToken) < TokenLendingPlace.optimalUtilizationRate){
+            TokenLendingPlace.mBLTInterestRate = TokenLendingPlace.BLTBorrowAmountToken / (TokenLendingPlace.tokenVaultBLT.balance + TokenLendingPlace.BLTBorrowAmountToken)/ TokenLendingPlace.optimalUtilizationRate*TokenLendingPlace.optimalBorrowApy
         }else{
-            TokenLendPlace.mBLTInterestRate = ((TokenLendPlace.BLTBorrowAmountToken / (TokenLendPlace.tokenVaultBLT.balance + TokenLendPlace.BLTBorrowAmountToken)) - TokenLendPlace.optimalUtilizationRate)/(1.0-TokenLendPlace.optimalUtilizationRate)*(1.0-TokenLendPlace.optimalUtilizationRate)+TokenLendPlace.optimalUtilizationRate
+            TokenLendingPlace.mBLTInterestRate = ((TokenLendingPlace.BLTBorrowAmountToken / (TokenLendingPlace.tokenVaultBLT.balance + TokenLendingPlace.BLTBorrowAmountToken)) - TokenLendingPlace.optimalUtilizationRate)/(1.0-TokenLendingPlace.optimalUtilizationRate)*(1.0-TokenLendingPlace.optimalUtilizationRate)+TokenLendingPlace.optimalUtilizationRate
         }
       }
     
@@ -163,7 +166,7 @@ pub contract TokenLendPlace {
     //
     // Token Collection object 紀錄了用戶的所有數據，用戶透過此 collection 來參與協議
     //
-    pub resource TokenLandCollection: TokenLandPublic {
+    pub resource TokenLendingCollection: TokenLendingPublic {
 
         access(self) var mFlow: UFix64
         access(self) var mFUSD: UFix64
@@ -214,19 +217,19 @@ pub contract TokenLendPlace {
 
             if(from.getType() == Type<@FlowToken.Vault>()) {
                 let balance = from.balance
-                TokenLendPlace.tokenVaultFlow.deposit(from: <- from)
-                self.mFlow = self.mFlow + (balance / TokenLendPlace.mFlowtokenPrice)
+                TokenLendingPlace.tokenVaultFlow.deposit(from: <- from)
+                self.mFlow = self.mFlow + (balance / TokenLendingPlace.mFlowtokenPrice)
             } else if( from.getType() == Type<@FUSD.Vault>()) {
                 let balance = from.balance
-                TokenLendPlace.tokenVaultFUSD.deposit(from: <- from)
-                self.mFUSD = self.mFUSD + (balance / TokenLendPlace.mFUSDtokenPrice)
+                TokenLendingPlace.tokenVaultFUSD.deposit(from: <- from)
+                self.mFUSD = self.mFUSD + (balance / TokenLendingPlace.mFUSDtokenPrice)
             } else if( from.getType() == Type<@BloctoToken.Vault>()) {
                 let balance = from.balance
-                TokenLendPlace.tokenVaultBLT.deposit(from: <- from)
-                self.mBLT = self.mBLT + (balance / TokenLendPlace.mBLTtokenPrice)
+                TokenLendingPlace.tokenVaultBLT.deposit(from: <- from)
+                self.mBLT = self.mBLT + (balance / TokenLendingPlace.mBLTtokenPrice)
             }
 
-            TokenLendPlace.updatePriceAndInterest()
+            TokenLendingPlace.updatePriceAndInterest()
             //event
         }
 
@@ -234,20 +237,20 @@ pub contract TokenLendPlace {
 
             if(_token == 0) {
                 self.mFlow = self.mFlow - _amount
-                let tokenVault <- TokenLendPlace.tokenVaultFlow.withdraw(amount: (_amount * TokenLendPlace.mFlowtokenPrice)) 
-                TokenLendPlace.updatePriceAndInterest()
+                let tokenVault <- TokenLendingPlace.tokenVaultFlow.withdraw(amount: (_amount * TokenLendingPlace.mFlowtokenPrice)) 
+                TokenLendingPlace.updatePriceAndInterest()
                 //event
                  return <- tokenVault
             } else if(_token == 1) {
                 self.mFUSD = self.mFUSD - _amount
-                let tokenVault <- TokenLendPlace.tokenVaultFUSD.withdraw(amount: (_amount * TokenLendPlace.mFUSDtokenPrice)) 
-                TokenLendPlace.updatePriceAndInterest()
+                let tokenVault <- TokenLendingPlace.tokenVaultFUSD.withdraw(amount: (_amount * TokenLendingPlace.mFUSDtokenPrice)) 
+                TokenLendingPlace.updatePriceAndInterest()
                 //event
                  return <- tokenVault
             } else {
                 self.mBLT = self.mBLT - _amount
-                let tokenVault <- TokenLendPlace.tokenVaultBLT.withdraw(amount: (_amount * TokenLendPlace.mBLTtokenPrice)) 
-                TokenLendPlace.updatePriceAndInterest()
+                let tokenVault <- TokenLendingPlace.tokenVaultBLT.withdraw(amount: (_amount * TokenLendingPlace.mBLTtokenPrice)) 
+                TokenLendingPlace.updatePriceAndInterest()
                 //event
                  return <- tokenVault
             }
@@ -257,9 +260,9 @@ pub contract TokenLendPlace {
         pub fun getBorrowingPower(): UFix64 {
             
             //美元計價
-            let FlowPower = (self.mFlow - self.myBorrowingmFlow) * TokenLendPlace.mFlowtokenPrice * TokenLendPlace.FlowTokenRealPrice
-            let FUSDPower = (self.mFUSD - self.myBorrowingmFUSD) * TokenLendPlace.mFUSDtokenPrice * TokenLendPlace.FUSDRealPrice 
-            let BLTPower = (self.mBLT - self.myBorrowingmBLT) * TokenLendPlace.mBLTtokenPrice * TokenLendPlace.BLTTokenRealPrice 
+            let FlowPower = (self.mFlow - self.myBorrowingmFlow) * TokenLendingPlace.mFlowtokenPrice * TokenLendingPlace.FlowTokenRealPrice
+            let FUSDPower = (self.mFUSD - self.myBorrowingmFUSD) * TokenLendingPlace.mFUSDtokenPrice * TokenLendingPlace.FUSDRealPrice 
+            let BLTPower = (self.mBLT - self.myBorrowingmBLT) * TokenLendingPlace.mBLTtokenPrice * TokenLendingPlace.BLTTokenRealPrice 
 
             return FlowPower + FUSDPower + BLTPower
         }
@@ -267,74 +270,74 @@ pub contract TokenLendPlace {
         pub fun getMaxBorrowingPower(): UFix64 {
             
             //美元計價
-            let FlowPower = self.mFlow * TokenLendPlace.mFlowtokenPrice * TokenLendPlace.FlowTokenRealPrice 
-            let FUSDPower = self.mFUSD * TokenLendPlace.mFUSDtokenPrice * TokenLendPlace.FUSDRealPrice
-            let BLTPower = self.mBLT * TokenLendPlace.mBLTtokenPrice * TokenLendPlace.BLTTokenRealPrice
+            let FlowPower = self.mFlow * TokenLendingPlace.mFlowtokenPrice * TokenLendingPlace.FlowTokenRealPrice 
+            let FUSDPower = self.mFUSD * TokenLendingPlace.mFUSDtokenPrice * TokenLendingPlace.FUSDRealPrice
+            let BLTPower = self.mBLT * TokenLendingPlace.mBLTtokenPrice * TokenLendingPlace.BLTTokenRealPrice
 
             return FlowPower + FUSDPower + BLTPower
         }
         pub fun getBorrowingNow(): UFix64 {
             
             //美元計價
-            let FlowBorrow = self.myBorrowingmFlow * TokenLendPlace.mFlowtokenPrice * TokenLendPlace.FlowTokenRealPrice 
-            let FUSDBorrow = self.myBorrowingmFUSD * TokenLendPlace.mFUSDtokenPrice * TokenLendPlace.FUSDRealPrice
-            let BLTBorrow = self.myBorrowingmBLT * TokenLendPlace.mBLTtokenPrice * TokenLendPlace.BLTTokenRealPrice
+            let FlowBorrow = self.myBorrowingmFlow * TokenLendingPlace.mFlowtokenPrice * TokenLendingPlace.FlowTokenRealPrice 
+            let FUSDBorrow = self.myBorrowingmFUSD * TokenLendingPlace.mFUSDtokenPrice * TokenLendingPlace.FUSDRealPrice
+            let BLTBorrow = self.myBorrowingmBLT * TokenLendingPlace.mBLTtokenPrice * TokenLendingPlace.BLTTokenRealPrice
 
             return FlowBorrow + FUSDBorrow + BLTBorrow
         }
 
         pub fun borrowFlow(_amount: UFix64): @FungibleToken.Vault {
             pre {
-                TokenLendPlace.tokenVaultFlow.balance - TokenLendPlace.FlowBorrowAmountToken > _amount: "Amount minted must be greater than zero"
-                (self.getBorrowingPower() * 0.6) > (TokenLendPlace.FlowTokenRealPrice * _amount) : "Amount minted must be greater than zero"
+                TokenLendingPlace.tokenVaultFlow.balance - TokenLendingPlace.FlowBorrowAmountToken > _amount: "Amount minted must be greater than zero"
+                (self.getBorrowingPower() * 0.6) > (TokenLendingPlace.FlowTokenRealPrice * _amount) : "Amount minted must be greater than zero"
             }
 
             emit Borrowed(address: self.owner?.address)
             
-            let realAmountofToken = _amount * TokenLendPlace.mFlowtokenPrice
-            TokenLendPlace.FlowBorrowAmountToken = realAmountofToken + TokenLendPlace.FlowBorrowAmountToken
+            let realAmountofToken = _amount * TokenLendingPlace.mFlowtokenPrice
+            TokenLendingPlace.FlowBorrowAmountToken = realAmountofToken + TokenLendingPlace.FlowBorrowAmountToken
 
             self.myBorrowingmFlow = _amount + self.myBorrowingmFlow
 
-            let token1Vault <- TokenLendPlace.tokenVaultFlow.withdraw(amount: realAmountofToken)
-            TokenLendPlace.updatePriceAndInterest()
+            let token1Vault <- TokenLendingPlace.tokenVaultFlow.withdraw(amount: realAmountofToken)
+            TokenLendingPlace.updatePriceAndInterest()
             return <- token1Vault
         }
 
         pub fun borrowFUSD(_amount: UFix64): @FungibleToken.Vault {
             pre {
-                TokenLendPlace.tokenVaultFUSD.balance - TokenLendPlace.FUSDBorrowAmountToken > _amount: "Amount minted must be greater than zero"
-                (self.getBorrowingPower() * 0.6) > (TokenLendPlace.FUSDRealPrice * _amount) : "Amount minted must be greater than zero"
+                TokenLendingPlace.tokenVaultFUSD.balance - TokenLendingPlace.FUSDBorrowAmountToken > _amount: "Amount minted must be greater than zero"
+                (self.getBorrowingPower() * 0.6) > (TokenLendingPlace.FUSDRealPrice * _amount) : "Amount minted must be greater than zero"
             }
 
             emit Borrowed(address: self.owner?.address)
             
-            let realAmountofToken = _amount * TokenLendPlace.mFUSDtokenPrice
-            TokenLendPlace.FUSDBorrowAmountToken = realAmountofToken + TokenLendPlace.FUSDBorrowAmountToken
+            let realAmountofToken = _amount * TokenLendingPlace.mFUSDtokenPrice
+            TokenLendingPlace.FUSDBorrowAmountToken = realAmountofToken + TokenLendingPlace.FUSDBorrowAmountToken
 
             self.myBorrowingmFUSD = _amount + self.myBorrowingmFUSD
 
-            let token1Vault <- TokenLendPlace.tokenVaultFUSD.withdraw(amount: realAmountofToken)
-            TokenLendPlace.updatePriceAndInterest()
+            let token1Vault <- TokenLendingPlace.tokenVaultFUSD.withdraw(amount: realAmountofToken)
+            TokenLendingPlace.updatePriceAndInterest()
             return <- token1Vault
         }
 
         pub fun borrowBLT(_amount: UFix64): @FungibleToken.Vault {
             pre {
-                TokenLendPlace.tokenVaultBLT.balance - TokenLendPlace.BLTBorrowAmountToken > _amount: "Amount minted must be greater than zero"
-                (self.getBorrowingPower() * 0.6) > (TokenLendPlace.BLTTokenRealPrice * _amount) : "Amount minted must be greater than zero"
+                TokenLendingPlace.tokenVaultBLT.balance - TokenLendingPlace.BLTBorrowAmountToken > _amount: "Amount minted must be greater than zero"
+                (self.getBorrowingPower() * 0.6) > (TokenLendingPlace.BLTTokenRealPrice * _amount) : "Amount minted must be greater than zero"
             }
 
             emit Borrowed(address: self.owner?.address)
             
 
-            let realAmountofToken = _amount * TokenLendPlace.mBLTtokenPrice
-            TokenLendPlace.BLTBorrowAmountToken = realAmountofToken + TokenLendPlace.BLTBorrowAmountToken
+            let realAmountofToken = _amount * TokenLendingPlace.mBLTtokenPrice
+            TokenLendingPlace.BLTBorrowAmountToken = realAmountofToken + TokenLendingPlace.BLTBorrowAmountToken
 
             self.myBorrowingmBLT = _amount + self.myBorrowingmBLT
 
-            let token1Vault <- TokenLendPlace.tokenVaultBLT.withdraw(amount: realAmountofToken)
-            TokenLendPlace.updatePriceAndInterest()
+            let token1Vault <- TokenLendingPlace.tokenVaultBLT.withdraw(amount: realAmountofToken)
+            TokenLendingPlace.updatePriceAndInterest()
             return <- token1Vault
         }
 
@@ -342,77 +345,77 @@ pub contract TokenLendPlace {
         pub fun repayFlow(from: @FlowToken.Vault){
             //unlock the borrowing power
 
-            TokenLendPlace.FlowBorrowAmountToken = TokenLendPlace.FlowBorrowAmountToken - from.balance
-            self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendPlace.mFlowtokenPrice)
+            TokenLendingPlace.FlowBorrowAmountToken = TokenLendingPlace.FlowBorrowAmountToken - from.balance
+            self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.mFlowtokenPrice)
 
-            TokenLendPlace.tokenVaultFlow.deposit(from: <- from )
-            TokenLendPlace.updatePriceAndInterest()
+            TokenLendingPlace.tokenVaultFlow.deposit(from: <- from )
+            TokenLendingPlace.updatePriceAndInterest()
         }
 
         pub fun repayFUSD(from: @FUSD.Vault){
             //unlock the borrowing power
 
 
-            TokenLendPlace.FUSDBorrowAmountToken = TokenLendPlace.FUSDBorrowAmountToken - from.balance
-            self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendPlace.mFUSDtokenPrice)
+            TokenLendingPlace.FUSDBorrowAmountToken = TokenLendingPlace.FUSDBorrowAmountToken - from.balance
+            self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.mFUSDtokenPrice)
 
-            TokenLendPlace.tokenVaultFUSD.deposit(from: <- from )
-            TokenLendPlace.updatePriceAndInterest()
+            TokenLendingPlace.tokenVaultFUSD.deposit(from: <- from )
+            TokenLendingPlace.updatePriceAndInterest()
         }
 
         pub fun repayBLT(from: @BloctoToken.Vault){
             //unlock the borrowing power
-            TokenLendPlace.BLTBorrowAmountToken = TokenLendPlace.BLTBorrowAmountToken - from.balance
-            self.myBorrowingmBLT = self.myBorrowingmBLT - (from.balance / TokenLendPlace.mBLTtokenPrice)
+            TokenLendingPlace.BLTBorrowAmountToken = TokenLendingPlace.BLTBorrowAmountToken - from.balance
+            self.myBorrowingmBLT = self.myBorrowingmBLT - (from.balance / TokenLendingPlace.mBLTtokenPrice)
 
-            TokenLendPlace.tokenVaultBLT.deposit(from: <- from )
-            TokenLendPlace.updatePriceAndInterest()
+            TokenLendingPlace.tokenVaultBLT.deposit(from: <- from )
+            TokenLendingPlace.updatePriceAndInterest()
         }
 
-        pub fun liquidateFlow(from: @FungibleToken.Vault, liquidatorVault: &TokenLandCollection){
+        pub fun liquidateFlow(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection){
             
             //flow in flow out
             if(from.getType() == Type<@FlowToken.Vault>()) {
-                self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendPlace.mFlowtokenPrice)
+                self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.mFlowtokenPrice)
 
                 let repaymoney = from.balance * 1.05
 
-                liquidatorVault.depositemFlow(from:(repaymoney / TokenLendPlace.mFlowtokenPrice))
+                liquidatorVault.depositemFlow(from:(repaymoney / TokenLendingPlace.mFlowtokenPrice))
 
-                TokenLendPlace.tokenVaultFlow.deposit(from: <- from)
+                TokenLendingPlace.tokenVaultFlow.deposit(from: <- from)
 
-                self.mFlow = self.mFlow - (repaymoney / TokenLendPlace.mFlowtokenPrice)
+                self.mFlow = self.mFlow - (repaymoney / TokenLendingPlace.mFlowtokenPrice)
 
-                //let token1Vault <- TokenLendPlace.tokenVaultFlow.withdraw(amount: repaymoney)
+                //let token1Vault <- TokenLendingPlace.tokenVaultFlow.withdraw(amount: repaymoney)
                 //return <- token1Vault
             } else if( from.getType() == Type<@FUSD.Vault>()) 
             {
-                TokenLendPlace.FUSDBorrowAmountToken = TokenLendPlace.FUSDBorrowAmountToken - from.balance
-                self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendPlace.mFUSDtokenPrice)
+                TokenLendingPlace.FUSDBorrowAmountToken = TokenLendingPlace.FUSDBorrowAmountToken - from.balance
+                self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.mFUSDtokenPrice)
                 
-                let repaymoney = from.balance * 1.05 / TokenLendPlace.FlowTokenRealPrice
+                let repaymoney = from.balance * 1.05 / TokenLendingPlace.FlowTokenRealPrice
 
-                liquidatorVault.depositemFUSD(from:(repaymoney / TokenLendPlace.mFUSDtokenPrice))
+                liquidatorVault.depositemFUSD(from:(repaymoney / TokenLendingPlace.mFUSDtokenPrice))
 
-                TokenLendPlace.tokenVaultFUSD.deposit(from: <- from)
+                TokenLendingPlace.tokenVaultFUSD.deposit(from: <- from)
 
-                self.mFlow = self.mFlow - (repaymoney / TokenLendPlace.mFlowtokenPrice)
+                self.mFlow = self.mFlow - (repaymoney / TokenLendingPlace.mFlowtokenPrice)
 
-                //let tokenVault <- TokenLendPlace.tokenVaultFlow.withdraw(amount: repaymoney)
+                //let tokenVault <- TokenLendingPlace.tokenVaultFlow.withdraw(amount: repaymoney)
                 //return <- tokenVault
             } else if( from.getType() == Type<@BloctoToken.Vault>())  {
-                 TokenLendPlace.BLTBorrowAmountToken = TokenLendPlace.BLTBorrowAmountToken - from.balance
-                self.myBorrowingmBLT = self.myBorrowingmBLT - (from.balance / TokenLendPlace.mBLTtokenPrice)
+                 TokenLendingPlace.BLTBorrowAmountToken = TokenLendingPlace.BLTBorrowAmountToken - from.balance
+                self.myBorrowingmBLT = self.myBorrowingmBLT - (from.balance / TokenLendingPlace.mBLTtokenPrice)
                 
-                let repaymoney = from.balance * 1.05 / TokenLendPlace.BLTTokenRealPrice
+                let repaymoney = from.balance * 1.05 / TokenLendingPlace.BLTTokenRealPrice
 
-                liquidatorVault.depositemBLT(from:(repaymoney / TokenLendPlace.mBLTtokenPrice))
+                liquidatorVault.depositemBLT(from:(repaymoney / TokenLendingPlace.mBLTtokenPrice))
 
-                TokenLendPlace.tokenVaultBLT.deposit(from: <- from)
+                TokenLendingPlace.tokenVaultBLT.deposit(from: <- from)
 
-                self.mBLT = self.mBLT - (repaymoney / TokenLendPlace.mBLTtokenPrice)
+                self.mBLT = self.mBLT - (repaymoney / TokenLendingPlace.mBLTtokenPrice)
             }
-            TokenLendPlace.updatePriceAndInterest()
+            TokenLendingPlace.updatePriceAndInterest()
         }
 
         access(self) fun depositemFlow(from: UFix64) {
@@ -429,8 +432,8 @@ pub contract TokenLendPlace {
     }
 
     // createCollection returns a new collection resource to the caller
-    pub fun createTokenLandCollection(): @TokenLandCollection {
-        return <- create TokenLandCollection()
+    pub fun createTokenLendingCollection(): @TokenLendingCollection {
+        return <- create TokenLendingCollection()
     }
 
     init() {
@@ -459,6 +462,8 @@ pub contract TokenLendPlace {
 
         self.optimalUtilizationRate = 0.8
         self.optimalBorrowApy = 0.08
+        self.CollectionStoragePath = /storage/GaiaCollection001
+        self.CollectionPublicPath = /public/GaiaCollection001
   }
 }
  

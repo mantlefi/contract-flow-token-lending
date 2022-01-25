@@ -1,6 +1,6 @@
-import TokenLendPlace from 0x04
+import TokenLendingPlace from 0x04
 
 pub fun main(): {String: UFix64} {
 
-    return {"flowBorrowApy":TokenLendPlace.mFlowInterestRate,"fusdBorrowApy":TokenLendPlace.mFUSDInterestRate,"bltBorrowApy":TokenLendPlace.mBLTInterestRate}
+    return {"flowBorrowApy":TokenLendingPlace.mFlowInterestRate,"fusdBorrowApy":TokenLendingPlace.mFUSDInterestRate,"bltBorrowApy":TokenLendingPlace.mBLTInterestRate}
 }
