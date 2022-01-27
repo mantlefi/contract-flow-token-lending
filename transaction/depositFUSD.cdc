@@ -1,4 +1,4 @@
-import FUSDToken from 0x03
+import FUSD from 0x03
 import FungibleToken from 0x01
 import TokenLendingPlace from 0x04
 
@@ -17,10 +17,10 @@ transaction(amount: UFix64) {
 
     // withdraw tokens from your vault by borrowing a reference to it
     // and calling the withdraw function with that reference
-    let vaultRef = acct.borrow<&FUSDToken.Vault>(from: /storage/FUSDVault)
+    let vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/FUSDVault)
         ?? panic("Could not borrow a reference to the owner's vault")
       
-    self.temporaryVault <- vaultRef.withdraw(amount: amount) as! @FUSDToken.Vault
+    self.temporaryVault <- vaultRef.withdraw(amount: amount) as! @FUSD.Vault
 
     self.lendingPlace = acct.borrow<&TokenLendingPlace.TokenLendingCollection>(from: TokenLendingPlace.CollectionStoragePath)
             ?? panic("Could not borrow token lending reference")

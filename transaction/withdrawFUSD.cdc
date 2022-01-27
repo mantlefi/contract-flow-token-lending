@@ -5,7 +5,7 @@ import TokenLendingPlace from 0x04
 transaction(amount: UFix64) {
 
   // Temporary Vault object that holds the balance that is being transferred
-  var vaultRef: &FUSDVault
+  var vaultRef: &FUSD.Vault
   var lendingPlace: &TokenLendingPlace.TokenLendingCollection
 
   prepare(acct: AuthAccount) {

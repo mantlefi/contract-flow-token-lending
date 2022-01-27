@@ -9,6 +9,6 @@ pub fun main(accountAddr: Address): {String:UFix64?} {
         ?? panic("Could not borrow acct2 nft sale reference")
 
 
-    return {"supplyFlow": acctlendingRef.getmFlow()*TokenLendingPlace.getmFlowtokenPrice(), "supplyFUSD": acctlendingRef.getmFUSD()*TokenLendingPlace.getmFUSDtokenPrice(), "supplyBlt": acctlendingRef.getmBLT()*TokenLendingPlace.getmBLTtokenPrice(),
-    "borrowFlow": acctlendingRef.getmyBorrowingmFlow()*TokenLendingPlace.getmFlowBorrowingtokenPrice(), "borrowFUSD": acctlendingRef.getmyBorrowingmFUSD()*TokenLendingPlace.getmFUSDBorrowingtokenPrice(), "borrowBlt": acctlendingRef.getmyBorrowingmBLT()*TokenLendingPlace.getmBLTBorrowingtokenPrice() }
+    return {"supplyFlow": acctlendingRef.getmFlow()*TokenLendingPlace.getmFlowTokenPrice(), "supplyFUSD": acctlendingRef.getmFUSD()*TokenLendingPlace.getmFUSDTokenPrice(), "supplyBlt": acctlendingRef.getmBLT()*TokenLendingPlace.getmBLTTokenPrice(),
+    "borrowFlow": acctlendingRef.getMyBorrowingmFlow()*TokenLendingPlace.getmFlowBorrowingTokenPrice(), "borrowFUSD": acctlendingRef.getMyBorrowingmFUSD()*TokenLendingPlace.getmFUSDBorrowingTokenPrice(), "borrowBlt": acctlendingRef.getMyBorrowingmBLT()*TokenLendingPlace.getmBLTBorrowingTokenPrice() }
 }

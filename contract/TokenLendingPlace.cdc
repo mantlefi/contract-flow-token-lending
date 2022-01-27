@@ -122,17 +122,17 @@ pub contract TokenLendingPlace {
     //get mFlowTokenPrice
      pub fun getmFlowTokenPrice(): UFix64{
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mFlowtokenPrice + delta * TokenLendingPlace.mFlowInterestRate
+        return TokenLendingPlace.mFlowtokenPrice + delta * TokenLendingPlace.mFlowInterestRate /( 365.0 * 24.0 * 60.0 * 60.0)
     }
     //get mFUSDTokenPrice
     pub fun getmFUSDTokenPrice(): UFix64{
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mFUSDtokenPrice + delta * TokenLendingPlace.mFUSDInterestRate
+        return TokenLendingPlace.mFUSDtokenPrice + delta * TokenLendingPlace.mFUSDInterestRate /( 365.0 * 24.0 * 60.0 * 60.0)
     }
     //get mBLTTokenPrice
     pub fun getmBLTTokenPrice(): UFix64{
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mBLTtokenPrice + delta * TokenLendingPlace.mBLTInterestRate
+        return TokenLendingPlace.mBLTtokenPrice + delta * TokenLendingPlace.mBLTInterestRate /( 365.0 * 24.0 * 60.0 * 60.0)
     }
     //get total supply
     pub fun getTotalsupply(): {String: UFix64} {
@@ -164,9 +164,9 @@ pub contract TokenLendingPlace {
         pub fun getMyTotalsupply(): UFix64
         pub fun getNetValue(): UFix64
         pub fun getMyTotalborrow(): UFix64
-        pub fun liquidateFlow()
-        pub fun liquidateFUSD()
-        pub fun liquidateBLT()
+        pub fun liquidateFlow(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection)
+        pub fun liquidateFUSD(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection)
+        pub fun liquidateBLT(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection)
     }
 
     //The method of updating mToken and interest rate in the protocol. Any part that changes the amount in the protocol (deposite, repay, withdrea, borrow, liquidty) will call this method. In this method we update the latest rate instantly.
