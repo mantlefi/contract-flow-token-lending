@@ -17,7 +17,7 @@ transaction(amount: UFix64) {
     
     // withdraw tokens from your vault by borrowing a reference to it
     // and calling the withdraw function with that reference
-    let vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/FUSDVault)
+    let vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/fusdVault)
         ?? panic("Could not borrow a reference to the owner's FUSD vault")
       
     self.temporaryVault <- vaultRef.withdraw(amount: amount) as! @FUSD.Vault

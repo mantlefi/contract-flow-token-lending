@@ -5,7 +5,7 @@ import TokenLendingPlace from 0x04
 transaction(amount: UFix64) {
 
   // Temporary Vault object that holds the balance that is being transferred
-  var temporaryVault: @Token.Vault
+  var temporaryVault: @FUSD.Vault
   var lendingPlace: &TokenLendingPlace.TokenLendingCollection
 
   prepare(acct: AuthAccount) {
@@ -17,7 +17,7 @@ transaction(amount: UFix64) {
 
     // withdraw tokens from your vault by borrowing a reference to it
     // and calling the withdraw function with that reference
-    let vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/FUSDVault)
+    let vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/fusdVault)
         ?? panic("Could not borrow a reference to the owner's vault")
       
     self.temporaryVault <- vaultRef.withdraw(amount: amount) as! @FUSD.Vault

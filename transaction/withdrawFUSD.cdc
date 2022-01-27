@@ -17,7 +17,7 @@ transaction(amount: UFix64) {
 
     // withdraw tokens from your vault by borrowing a reference to it
     // and calling the withdraw function with that reference
-    self.vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/FUSDVault)
+    self.vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/fusdVault)
         ?? panic("Could not borrow a reference to the owner's FUSD vault")
       
     self.lendingPlace = acct.borrow<&TokenLendingPlace.TokenLendingCollection>(from: TokenLendingPlace.CollectionStoragePath)
