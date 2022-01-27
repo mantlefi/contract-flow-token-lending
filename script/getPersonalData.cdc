@@ -8,9 +8,9 @@ pub fun main(accountAddr: Address): {String:UFix64?} {
         .borrow()
         ?? panic("Could not borrow accountAddr's TokenLendPlace reference")
 
-    var borrowLimit = acctlendingRef.getMaxBorrowingPower()* 0.7
-    var liquidationThreshold = acctlendingRef.getMaxBorrowingPower() *0.8
+    var borrowLimit = acctlendingRef.getMyTotalsupply()* TokenLendingPlace.loanToValueRatio
+    var liquidationThreshold = acctlendingRef.getMyTotalsupply() * TokenLendingPlace.optimalUtilizationRate
 
-    return {"supplyBalance": acctlendingRef.getMaxBorrowingPower(), "borrowBalance": acctlendingRef.getBorrowingNow(), "borrowLimit": borrowLimit, "liquidationThreshold": liquidationThreshold,
-    "netValue": acctlendingRef.getBorrowingPower(), "borrowUtilization": acctlendingRef.getBorrowingNow() / acctlendingRef.getMaxBorrowingPower()}
+    return {"supplyBalance": acctlendingRef.getMyTotalsupply(), "borrowBalance": acctlendingRef.getMyTotalborrow(), "borrowLimit": borrowLimit, "liquidationThreshold": liquidationThreshold,
+    "netValue": acctlendingRef.getNetValue(), "borrowUtilization": acctlendingRef.getMyTotalborrow() / borrowLimit}
 }

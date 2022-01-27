@@ -12,7 +12,7 @@ transaction() {
   prepare(acct: AuthAccount) {
    if acct.borrow<&AnyResource{TokenLendingPlace.TokenLendingPublic}>(from: TokenLendingPlace.CollectionStoragePath) == nil {
             let lendingPlace <- TokenLendingPlace.createTokenLendingCollection()
-            acct.save(<-lendingPlace, to: /storage/TokenLendPlace)
+            acct.save(<-lendingPlace, to: TokenLendingPlace.CollectionStoragePath)
             acct.link<&TokenLendingPlace.TokenLendingCollection{TokenLendingPlace.TokenLendingPublic}>(TokenLendingPlace.CollectionPublicPath, target: TokenLendingPlace.CollectionStoragePath)
         }
     if(acct.borrow<&FUSD.Vault>(from: /storage/fusdVault) == nil) {
