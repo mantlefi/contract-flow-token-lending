@@ -158,9 +158,9 @@ pub contract TokenLendingPlace {
         pub fun getmFlow(): UFix64
         pub fun getmFUSD(): UFix64
         pub fun getmBLT(): UFix64
-        pub fun getmyBorrowingmFlow(): UFix64
-        pub fun getmyBorrowingmFUSD(): UFix64
-        pub fun getmyBorrowingmBLT(): UFix64
+        pub fun getMyBorrowingmFlow(): UFix64
+        pub fun getMyBorrowingmFUSD(): UFix64
+        pub fun getMyBorrowingmBLT(): UFix64
         pub fun getMyTotalsupply(): UFix64
         pub fun getNetValue(): UFix64
         pub fun getMyTotalborrow(): UFix64
@@ -256,15 +256,15 @@ pub contract TokenLendingPlace {
             return self.mBLT
         }
 
-        pub fun getmyBorrowingmFlow(): UFix64 {
+        pub fun getMyBorrowingmFlow(): UFix64 {
             return self.myBorrowingmFlow
         }
 
-        pub fun getmyBorrowingmFUSD(): UFix64 {
+        pub fun getMyBorrowingmFUSD(): UFix64 {
             return self.myBorrowingmFUSD
         }
 
-        pub fun getmyBorrowingmBLT(): UFix64 {
+        pub fun getMyBorrowingmBLT(): UFix64 {
             return self.myBorrowingmBLT
         }
 
