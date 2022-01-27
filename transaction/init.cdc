@@ -4,7 +4,6 @@ import TokenLendingPlace from 0x04
 import FUSD from 0x03
 import BloctoToken from 0x05
 
-
 // This transaction is a template for a transaction that
 // could be used by anyone to send tokens to another account
 // that owns a Vault
@@ -33,10 +32,11 @@ transaction() {
             /public/fusdBalance,
             target: /storage/fusdVault
         )
-        }
-        // If the account is already set up that's not a problem, but we don't want to replace it
-        if(acct.borrow<&BloctoToken.Vault>(from: BloctoToken.TokenStoragePath) == nil) {
-            // Create a new Blocto Token Vault and put it in storage
+    }
+
+    // If the account is already set up that's not a problem, but we don't want to replace it
+    if(acct.borrow<&BloctoToken.Vault>(from: BloctoToken.TokenStoragePath) == nil) {
+        // Create a new Blocto Token Vault and put it in storage
         acct.save(<-BloctoToken.createEmptyVault(), to: BloctoToken.TokenStoragePath)
 
         // Create a public capability to the Vault that only exposes
@@ -52,13 +52,8 @@ transaction() {
             BloctoToken.TokenPublicBalancePath,
             target: BloctoToken.TokenStoragePath
         )
-        }
-        
-        
-  }
+    } 
 
-
-  execute {
   }
 }
  
