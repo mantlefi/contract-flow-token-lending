@@ -5,155 +5,168 @@ import BloctoToken from 0x05
 
 pub contract TokenLendingPlace {
 
-    //Event emitted when user deposit token and mint mToken
+    // Event emitted when the user deposits token and mint mToken
     pub event Mint(minter: Address?, kind: Type, mintAmount: UFix64, mintTokens: UFix64)
 
-    //Event emitted when user redeem mToken and withdraw token
+    // Event emitted when the user redeems mToken and withdraw token
     pub event Redeem(redeemer: Address?, kind: Type, redeemAmount: UFix64, redeemTokens: UFix64)
 
-    //Event emitted when user borrow the token
+    // Event emitted when the user borrows the token
     pub event Borrow(borrower: Address?, kind: Type, borrowAmount: UFix64)
 
-    //Event emitted when user repay the token
+    // Event emitted when the user repays the token
     pub event RepayBorrow(payer: Address?, borrower: Address?, kind: Type, repayAmount: UFix64)
 
-    //Event emitted when user liquidate the token
+    // Event emitted when the user liquidates the token
     pub event LiquidateBorrow(liquidator: Address?, borrower: Address?, kindRepay: Type, kindSeize: Type, repayAmount: UFix64, seizeTokens: UFix64)
 
-    //here is where store the token
+    // Where tokens are stored
     access(contract) let TokenVaultFlow: @FlowToken.Vault
     access(contract) let TokenVaultFUSD: @FUSD.Vault
     access(contract) let TokenVaultBLT: @BloctoToken.Vault
 
-    //The tokens be minted in the protocol are all represented by mToken, and the price of mToken will only rise, not fall.
-    //user will mint mToken when deposit
+    // Tokens minted in the protocol are represented as mToken, and the price of mToken will only increase
+    // User will mint mToken when deposit
     pub var mFlowtokenPrice: UFix64 
     pub var mFUSDtokenPrice: UFix64
     pub var mBLTtokenPrice: UFix64
 
-    //user will mint mBorrowingToken when borrow
+    // User will mint mBorrowingToken when borrow
     pub var mFlowBorrowingtokenPrice: UFix64 
     pub var mFUSDBorrowingtokenPrice: UFix64
     pub var mBLTBorrowingtokenPrice: UFix64
 
-    //the token real price
+    // The real price of token
     pub var FlowTokenRealPrice: UFix64
     pub var FUSDRealPrice: UFix64
     pub var BLTTokenRealPrice: UFix64
     
-
-    //apr of each token deposit
+    // The APR of each deposit
     pub var mFlowInterestRate: UFix64
     pub var mFUSDInterestRate: UFix64 
     pub var mBLTInterestRate: UFix64 
 
-    //apr of each token borrow
+    // The APR of each borrow
     pub var mFlowBorrowingInterestRate: UFix64
     pub var mFUSDBorrowingInterestRate: UFix64 
     pub var mBLTBorrowingInterestRate: UFix64 
 
-    //last interest update timestamp
+    // The last interest update timestamp
     pub var finalTimestamp: UFix64
 
-    //The total amount of tokens being lent in the protocol, this amount will affect the calculation of the interest
+    // The total amount of tokens lent in the protocol, which affect the calculation of interest
     pub var mFlowBorrowingAmountToken: UFix64
     pub var mFUSDBorrowingAmountToken: UFix64
     pub var mBLTBorrowingAmountToken: UFix64
 
-    //the limit of each token can be deposited
+    // The deposit limit of token
     pub var depositeLimitFLOWToken: UFix64
     pub var depositeLimitFUSD: UFix64
     pub var depositeLimitBLTToken: UFix64
 
-    //the parameter of the protocol 
+    // The parameter of protocol 
     pub var optimalUtilizationRate: UFix64
     pub var optimalBorrowApy: UFix64
     pub var loanToValueRatio: UFix64
 
-    //the path of the protocol
+    // The path of protocol
     pub let CollectionStoragePath: StoragePath
     pub let CollectionPublicPath: PublicPath
 
-    //the rate of Flow been borrowed now
+    // The rate of borrowed FLOW
     pub fun getFlowUtilizationRate(): UFix64 {
-        if(TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice() != 0.0){
+        if (TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice() != 0.0) {
             return (TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice()) / (TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice())
-        }else {
+        } else {
             return 0.0
         }
     }
 
-    //the rate of FUSD been borrowed now
+    // The rate of borrowed FUSD
     pub fun getFUSDUtilizationRate(): UFix64 {
-        if(TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice() != 0.0){
+        if (TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice() != 0.0) {
             return (TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice()) / (TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice())
-        }else{
+        } else {
             return 0.0
         }
     }
     
-    //the rate of BLT been borrowed now
+    // The rate of borrowed BLT
     pub fun getBLTUtilizationRate(): UFix64 {
-        if(TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice() != 0.0){
+        if (TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice() != 0.0) {
             return (TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice()) / (TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice())
-        }else{
+        } else {
             return 0.0
         }
     }
 
-    //get mFlowBorrowingTokenPrice
-    pub fun getmFlowBorrowingTokenPrice(): UFix64{
+    // Get mFlowBorrowingTokenPrice
+    pub fun getmFlowBorrowingTokenPrice(): UFix64 {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mFlowBorrowingtokenPrice + delta * TokenLendingPlace.mFlowBorrowingInterestRate /( 365.0 * 24.0 * 60.0 * 60.0)
+        return TokenLendingPlace.mFlowBorrowingtokenPrice + delta * TokenLendingPlace.mFlowBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
 
-    //get mFUSDBorrowingTokenPrice
-    pub fun getmFUSDBorrowingTokenPrice(): UFix64{
+    // Get mFUSDBorrowingTokenPrice
+    pub fun getmFUSDBorrowingTokenPrice(): UFix64 {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mFUSDBorrowingtokenPrice + delta * TokenLendingPlace.mFUSDBorrowingInterestRate/( 365.0 * 24.0 * 60.0 * 60.0)
+        return TokenLendingPlace.mFUSDBorrowingtokenPrice + delta * TokenLendingPlace.mFUSDBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
 
-    //get mBLTBorrowingtokenPrice
-    pub fun getmBLTBorrowingTokenPrice(): UFix64{
+    // Get mBLTBorrowingtokenPrice
+    pub fun getmBLTBorrowingTokenPrice(): UFix64 {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mBLTBorrowingtokenPrice + delta * TokenLendingPlace.mBLTBorrowingInterestRate/( 365.0 * 24.0 * 60.0 * 60.0)
+        return TokenLendingPlace.mBLTBorrowingtokenPrice + delta * TokenLendingPlace.mBLTBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
 
-    //get mFlowTokenPrice
-     pub fun getmFlowTokenPrice(): UFix64{
+    // Get mFlowTokenPrice
+    pub fun getmFlowTokenPrice(): UFix64 {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mFlowtokenPrice + delta * TokenLendingPlace.mFlowInterestRate /( 365.0 * 24.0 * 60.0 * 60.0)
+        return TokenLendingPlace.mFlowtokenPrice + delta * TokenLendingPlace.mFlowInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
-    //get mFUSDTokenPrice
-    pub fun getmFUSDTokenPrice(): UFix64{
+    // Get mFUSDTokenPrice
+    pub fun getmFUSDTokenPrice(): UFix64 {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mFUSDtokenPrice + delta * TokenLendingPlace.mFUSDInterestRate /( 365.0 * 24.0 * 60.0 * 60.0)
+        return TokenLendingPlace.mFUSDtokenPrice + delta * TokenLendingPlace.mFUSDInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
-    //get mBLTTokenPrice
-    pub fun getmBLTTokenPrice(): UFix64{
+    // Get mBLTTokenPrice
+    pub fun getmBLTTokenPrice(): UFix64 {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mBLTtokenPrice + delta * TokenLendingPlace.mBLTInterestRate /( 365.0 * 24.0 * 60.0 * 60.0)
+        return TokenLendingPlace.mBLTtokenPrice + delta * TokenLendingPlace.mBLTInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
-    //get total supply
+    // Get total supply
     pub fun getTotalsupply(): {String: UFix64} {
-            return {"flowTotalSupply":TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice(), "fusdTotalSupply": TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice(), "bltTotalSupply":TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice()}
+        return {
+            "flowTotalSupply": TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice(),
+            "fusdTotalSupply": TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice(),
+            "bltTotalSupply": TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice()
+        }
     }
-    //get deposit limit
+    // Get deposit limit
     pub fun getDepositLimit(): {String: UFix64} {
-            return {"flowDepositLimit":TokenLendingPlace.depositeLimitFLOWToken,"fusdDepositLimit": TokenLendingPlace.depositeLimitFUSD, "bltDepositLimit":TokenLendingPlace.depositeLimitBLTToken}
+        return {
+            "flowDepositLimit":TokenLendingPlace.depositeLimitFLOWToken,
+            "fusdDepositLimit": TokenLendingPlace.depositeLimitFUSD,
+            "bltDepositLimit":TokenLendingPlace.depositeLimitBLTToken
+        }
     }
-    //get total borrow
+    // Get total borrow
     pub fun getTotalBorrow(): {String: UFix64} {
-            return {"flowTotalBorrow":TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice(),"fusdTotalBorrow": TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice(), "bltTotalBorrow":TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice()}
+        return {
+            "flowTotalBorrow":TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice(),
+            "fusdTotalBorrow": TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice(),
+            "bltTotalBorrow":TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice()
+        }
     }
-    //get token real price
+    // Get token real price
     pub fun getTokenPrice(): {String: UFix64} {
-            return {"flowTokenPrice":TokenLendingPlace.FlowTokenRealPrice,"fusdTokenPrice": TokenLendingPlace.FUSDRealPrice, "bltTokenPrice":TokenLendingPlace.BLTTokenRealPrice}
+        return {
+            "flowTokenPrice":TokenLendingPlace.FlowTokenRealPrice,
+            "fusdTokenPrice": TokenLendingPlace.FUSDRealPrice,
+            "bltTokenPrice":TokenLendingPlace.BLTTokenRealPrice
+        }
     }
 
-    // Interface that users will publish for their lending collection
-    // that only exposes the methods that are supposed to be public
-    //
+    // Interface for users to publish their lending collection, which only exposes public methods
     pub resource interface TokenLendingPublic {
         pub fun getmFlow(): UFix64
         pub fun getmFUSD(): UFix64
@@ -169,9 +182,12 @@ pub contract TokenLendingPlace {
         pub fun liquidateBLT(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection)
     }
 
-    //The method of updating mToken and interest rate in the protocol. Any part that changes the amount in the protocol (deposite, repay, withdrea, borrow, liquidty) will call this method. In this method we update the latest rate instantly.
-    access(contract) fun updatePriceAndInterest(){
-        //update token price
+    // The method for updating mToken and interest rate in the protocol.
+    // Every amount changing, such as deposite, repay, withdraw, borrow, and liquidty, will call this method,
+    // which updates the latest rate immediately
+    access(contract) fun updatePriceAndInterest() {
+
+        // Update token price
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
         TokenLendingPlace.mFlowtokenPrice = TokenLendingPlace.mFlowtokenPrice + (delta * TokenLendingPlace.mFlowInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
         TokenLendingPlace.mFUSDtokenPrice = TokenLendingPlace.mFUSDtokenPrice + (delta * TokenLendingPlace.mFUSDInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
@@ -182,36 +198,37 @@ pub contract TokenLendingPlace {
         TokenLendingPlace.mBLTBorrowingtokenPrice = TokenLendingPlace.mBLTBorrowingtokenPrice + (delta * TokenLendingPlace.mBLTBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
         TokenLendingPlace.finalTimestamp = getCurrentBlock().timestamp
 
-        //update interestRate
-        if(TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice() != 0.0){
-            if(TokenLendingPlace.getFlowUtilizationRate() < TokenLendingPlace.optimalUtilizationRate){
+        // Update interestRate
+        if (TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice() != 0.0) {
+            if (TokenLendingPlace.getFlowUtilizationRate() < TokenLendingPlace.optimalUtilizationRate) {
                 TokenLendingPlace.mFlowBorrowingInterestRate = TokenLendingPlace.getFlowUtilizationRate() / TokenLendingPlace.optimalUtilizationRate * TokenLendingPlace.optimalBorrowApy
-            }else{
+            } else {
                TokenLendingPlace.mFlowBorrowingInterestRate = (TokenLendingPlace.getFlowUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * ( 1.0 - TokenLendingPlace.optimalUtilizationRate) + TokenLendingPlace.optimalUtilizationRate
             }
             TokenLendingPlace.mFlowInterestRate = TokenLendingPlace.mFlowBorrowingInterestRate * TokenLendingPlace.getFlowUtilizationRate()
         }
 
-        if(TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice() != 0.0){
-            if(TokenLendingPlace.getFUSDUtilizationRate() < TokenLendingPlace.optimalUtilizationRate){
-               TokenLendingPlace.mFUSDBorrowingInterestRate =TokenLendingPlace.getFUSDUtilizationRate() / TokenLendingPlace.optimalUtilizationRate*TokenLendingPlace.optimalBorrowApy
-            }else{
+        if (TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice() != 0.0) {
+            if (TokenLendingPlace.getFUSDUtilizationRate() < TokenLendingPlace.optimalUtilizationRate) {
+               TokenLendingPlace.mFUSDBorrowingInterestRate = TokenLendingPlace.getFUSDUtilizationRate() / TokenLendingPlace.optimalUtilizationRate*TokenLendingPlace.optimalBorrowApy
+            } else {
                 TokenLendingPlace.mFUSDBorrowingInterestRate = (TokenLendingPlace.getFUSDUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * (1.0 - TokenLendingPlace.optimalUtilizationRate) + TokenLendingPlace.optimalUtilizationRate
             }
             TokenLendingPlace.mFUSDInterestRate = TokenLendingPlace.mFUSDBorrowingInterestRate * TokenLendingPlace.getFUSDUtilizationRate()
         }
 
-        if(TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice() != 0.0){
-            if(TokenLendingPlace.getBLTUtilizationRate() < TokenLendingPlace.optimalUtilizationRate){
+        if (TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice() != 0.0) {
+            if (TokenLendingPlace.getBLTUtilizationRate() < TokenLendingPlace.optimalUtilizationRate) {
                 TokenLendingPlace.mBLTBorrowingInterestRate = TokenLendingPlace.getBLTUtilizationRate() / TokenLendingPlace.optimalUtilizationRate*TokenLendingPlace.optimalBorrowApy
-            }else{
+            } else {
                 TokenLendingPlace.mBLTBorrowingInterestRate = (TokenLendingPlace.getBLTUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * (1.0 - TokenLendingPlace.optimalUtilizationRate) + TokenLendingPlace.optimalUtilizationRate
             }
             TokenLendingPlace.mBLTInterestRate = TokenLendingPlace.mBLTBorrowingInterestRate * TokenLendingPlace.getBLTUtilizationRate()
         }
     }
 
-    //TODO, waiting real feed source, and limit certain caller.
+    // TODO: waiting for real feed source
+    // TODO: auth the caller
     pub fun updatePricefromOracle(_FlowPrice: UFix64, _FUSDPrice: UFix64, _BLTPrice: UFix64){
       self.FlowTokenRealPrice = _FlowPrice
       self.FUSDRealPrice = _FUSDPrice
@@ -220,16 +237,16 @@ pub contract TokenLendingPlace {
 
     // LendingCollection
     //
-    // The Token Collection resource records all the data of the user, and the user join in the protocol through this resource
+    // The Token collection resource records every user data. Users join the protocol through this resource.
     //
     pub resource TokenLendingCollection: TokenLendingPublic {
 
-        //user mtoken amount, will be minted when deposit
+        // User's mtoken amount, which minted when deposit
         access(self) var mFlow: UFix64
         access(self) var mFUSD: UFix64
         access(self) var mBLT: UFix64
 
-        //user mBorrowingtoken amount, will be minted when borrow
+        // User's mBorrowingtoken amount, which minted when borrow
         access(self) var myBorrowingmFlow: UFix64
         access(self) var myBorrowingmFUSD: UFix64
         access(self) var myBorrowingmBLT: UFix64
@@ -268,19 +285,19 @@ pub contract TokenLendingPlace {
             return self.myBorrowingmBLT
         }
 
-        //user deposit the token as Liquidity and mint mtoken
+        // User deposits the token as Liquidity and mint mtoken
         pub fun addLiquidity(from: @FungibleToken.Vault) {
 
             var balance = 0.0
-            if(from.getType() == Type<@FlowToken.Vault>()) {
+            if (from.getType() == Type<@FlowToken.Vault>()) {
                 balance = from.balance
                 TokenLendingPlace.TokenVaultFlow.deposit(from: <- from)
                 self.mFlow = self.mFlow + (balance / TokenLendingPlace.getmFlowTokenPrice())
-            } else if( from.getType() == Type<@FUSD.Vault>()) {
+            } else if (from.getType() == Type<@FUSD.Vault>()) {
                 balance = from.balance
                 TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
                 self.mFUSD = self.mFUSD + (balance / TokenLendingPlace.getmFUSDTokenPrice())
-            } else if( from.getType() == Type<@BloctoToken.Vault>()) {
+            } else if(from.getType() == Type<@BloctoToken.Vault>()) {
                 balance = from.balance
                 TokenLendingPlace.TokenVaultBLT.deposit(from: <- from)
                 self.mBLT = self.mBLT + (balance / TokenLendingPlace.getmBLTTokenPrice())
@@ -289,47 +306,75 @@ pub contract TokenLendingPlace {
             TokenLendingPlace.updatePriceAndInterest()
             self.checkDepositValid()
 
-            //event
-            emit Mint(minter: self.owner?.address , kind: FlowToken.getType(), mintAmount: balance, mintTokens: balance / TokenLendingPlace.getmBLTTokenPrice())
+            // event
+            emit Mint(
+                minter: self.owner?.address,
+                kind: FlowToken.getType(),
+                mintAmount: balance,
+                mintTokens: balance / TokenLendingPlace.getmBLTTokenPrice()
+            )
         }
 
-        //user redeem mtoken and withdraw the token
+        // User redeems mtoken and withdraw the token
         pub fun removeLiquidity(_amount: UFix64, _token: Int): @FungibleToken.Vault {
 
-            if(_token == 0) {
+            if (_token == 0) {
                 let mFlowAmount = _amount / TokenLendingPlace.getmFlowTokenPrice()
                 self.mFlow = self.mFlow - mFlowAmount
                 let tokenVault <- TokenLendingPlace.TokenVaultFlow.withdraw(amount: _amount) 
                 TokenLendingPlace.updatePriceAndInterest()
                 self.checkBorrowValid()
-                //event
-                emit Redeem(redeemer: self.owner?.address , kind: FlowToken.getType(), redeemAmount: _amount, redeemTokens: _amount / TokenLendingPlace.getmFlowTokenPrice())
-                 return <- tokenVault
-            } else if(_token == 1) {
+
+                // event
+                emit Redeem(
+                    redeemer: self.owner?.address,
+                    kind: FlowToken.getType(),
+                    redeemAmount: _amount,
+                    redeemTokens: _amount / TokenLendingPlace.getmFlowTokenPrice()
+                )
+
+                return <- tokenVault
+
+            } else if (_token == 1) {
                 let mFUSDAmount = _amount / TokenLendingPlace.getmFUSDTokenPrice()
                 self.mFUSD = self.mFUSD - mFUSDAmount
                 let tokenVault <- TokenLendingPlace.TokenVaultFUSD.withdraw(amount: _amount) 
                 TokenLendingPlace.updatePriceAndInterest()
                 self.checkBorrowValid()
-                //event
-                emit Redeem(redeemer: self.owner?.address , kind: FUSD.getType(), redeemAmount: _amount, redeemTokens: _amount / TokenLendingPlace.getmFUSDTokenPrice())
-                 return <- tokenVault
+
+                // event
+                emit Redeem(
+                    redeemer: self.owner?.address,
+                    kind: FUSD.getType(),
+                    redeemAmount: _amount,
+                    redeemTokens: _amount / TokenLendingPlace.getmFUSDTokenPrice()
+                )
+
+                return <- tokenVault
+
             } else {
                 let mBLTAmount = _amount / TokenLendingPlace.getmBLTTokenPrice()
                 self.mBLT = self.mBLT - mBLTAmount
                 let tokenVault <- TokenLendingPlace.TokenVaultBLT.withdraw(amount: _amount) 
                 TokenLendingPlace.updatePriceAndInterest()
                 self.checkBorrowValid()
-                //event
-                emit Redeem(redeemer: self.owner?.address , kind: BloctoToken.getType(), redeemAmount: _amount, redeemTokens: _amount / TokenLendingPlace.getmBLTTokenPrice())
-                 return <- tokenVault
+
+                // event
+                emit Redeem(
+                    redeemer: self.owner?.address,
+                    kind: BloctoToken.getType(),
+                    redeemAmount: _amount,
+                    redeemTokens: _amount / TokenLendingPlace.getmBLTTokenPrice()
+                )
+                
+                return <- tokenVault
             }
         }
 
-        //get user's net value
+        // Get user's net value
         pub fun getNetValue(): UFix64 {
             
-            //to usd
+            // to USD
             let FlowPower = (self.mFlow * TokenLendingPlace.getmFlowTokenPrice() - self.myBorrowingmFlow * TokenLendingPlace.getmFlowBorrowingTokenPrice()) * TokenLendingPlace.FlowTokenRealPrice
             let FUSDPower = (self.mFUSD * TokenLendingPlace.getmFUSDTokenPrice() - self.myBorrowingmFUSD * TokenLendingPlace.getmFUSDBorrowingTokenPrice()) * TokenLendingPlace.FUSDRealPrice 
             let BLTPower = (self.mBLT * TokenLendingPlace.getmBLTTokenPrice() - self.myBorrowingmBLT * TokenLendingPlace.getmFUSDBorrowingTokenPrice()) * TokenLendingPlace.BLTTokenRealPrice 
@@ -337,10 +382,10 @@ pub contract TokenLendingPlace {
             return FlowPower + FUSDPower + BLTPower
         }
 
-        //get user's total supply
+        // Get user's total supply
         pub fun getMyTotalsupply(): UFix64 {
             
-            //to usd
+            // to USD
             let FlowPower = self.mFlow * TokenLendingPlace.getmFlowTokenPrice() * TokenLendingPlace.FlowTokenRealPrice 
             let FUSDPower = self.mFUSD * TokenLendingPlace.getmFUSDTokenPrice() * TokenLendingPlace.FUSDRealPrice
             let BLTPower = self.mBLT * TokenLendingPlace.getmBLTTokenPrice() * TokenLendingPlace.BLTTokenRealPrice
@@ -348,10 +393,10 @@ pub contract TokenLendingPlace {
             return FlowPower + FUSDPower + BLTPower
         }
 
-        //get user's total borrow
+        // Get user's total borrow
         pub fun getMyTotalborrow(): UFix64 {
 
-            //to usd
+            // to USD
             let FlowBorrow = self.myBorrowingmFlow * TokenLendingPlace.getmFlowBorrowingTokenPrice() * TokenLendingPlace.FlowTokenRealPrice 
             let FUSDBorrow = self.myBorrowingmFUSD * TokenLendingPlace.getmFUSDBorrowingTokenPrice() * TokenLendingPlace.FUSDRealPrice
             let BLTBorrow = self.myBorrowingmBLT * TokenLendingPlace.getmBLTBorrowingTokenPrice() * TokenLendingPlace.BLTTokenRealPrice
@@ -359,10 +404,10 @@ pub contract TokenLendingPlace {
             return FlowBorrow + FUSDBorrow + BLTBorrow
         }
 
-        //user borrows flow token
+        // User borrows FLOW token
         pub fun borrowFlow(_amount: UFix64): @FungibleToken.Vault {
             pre {
-                TokenLendingPlace.TokenVaultFlow.balance - _amount >= 0.0: "Not enough Flow to borrow"
+                TokenLendingPlace.TokenVaultFlow.balance - _amount >= 0.0: "Don't have enough FLOW to borrow"
             }
             
             let AmountofmToken = _amount / TokenLendingPlace.getmFlowBorrowingTokenPrice()
@@ -374,16 +419,20 @@ pub contract TokenLendingPlace {
             TokenLendingPlace.updatePriceAndInterest()
             self.checkBorrowValid()
 
-            //event         
-            emit Borrow(borrower: self.owner?.address, kind: FlowToken.getType(), borrowAmount: _amount)
+            // event         
+            emit Borrow(
+                borrower: self.owner?.address,
+                kind: FlowToken.getType(),
+                borrowAmount: _amount
+            )
 
             return <- tokenVault
         }
 
-        //user borrows FUSD token
+        // User borrows FUSD token
         pub fun borrowFUSD(_amount: UFix64): @FungibleToken.Vault {
             pre {
-                TokenLendingPlace.TokenVaultFUSD.balance - _amount >= 0.0: "Not enough FUSD to borrow"
+                TokenLendingPlace.TokenVaultFUSD.balance - _amount >= 0.0: "Don't have enough FUSD to borrow"
             }
             
             let AmountofmToken = _amount / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
@@ -395,16 +444,20 @@ pub contract TokenLendingPlace {
             TokenLendingPlace.updatePriceAndInterest()
             self.checkBorrowValid()
 
-            //event         
-            emit Borrow(borrower: self.owner?.address, kind: FUSD.getType(), borrowAmount: _amount)
+            // event         
+            emit Borrow(
+                borrower: self.owner?.address,
+                kind: FUSD.getType(),
+                borrowAmount: _amount
+            )
 
             return <- tokenVault
         }
         
-        //user borrows BLT token
+        // User borrows BLT token
         pub fun borrowBLT(_amount: UFix64): @FungibleToken.Vault {
             pre {
-                TokenLendingPlace.TokenVaultBLT.balance - _amount >= 0.0: "Not enough BLT to borrow"
+                TokenLendingPlace.TokenVaultBLT.balance - _amount >= 0.0: "Don't have enough BLT to borrow"
             }            
 
             let AmountofmToken = _amount / TokenLendingPlace.getmBLTBorrowingTokenPrice()
@@ -416,123 +469,178 @@ pub contract TokenLendingPlace {
             TokenLendingPlace.updatePriceAndInterest()
             self.checkBorrowValid()
 
-            //event         
-            emit Borrow(borrower: self.owner?.address, kind: BloctoToken.getType(), borrowAmount: _amount)
+            // event         
+            emit Borrow(
+                borrower: self.owner?.address,
+                kind: BloctoToken.getType(),
+                borrowAmount: _amount
+            )
 
             return <- tokenVault
         }
 
-        //user repay FLow
-        pub fun repayFlow(from: @FlowToken.Vault){
-            pre{
-                self.myBorrowingmFlow - from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice() >= 0.0: "Repay too much flow"
+        // User repays FLow
+        pub fun repayFlow(from: @FlowToken.Vault) {
+            pre {
+                self.myBorrowingmFlow - from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice() >= 0.0: "Repay too much FLOW"
             }
 
             TokenLendingPlace.mFlowBorrowingAmountToken = TokenLendingPlace.mFlowBorrowingAmountToken - from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()
             self.myBorrowingmFlow = self.myBorrowingmFlow - from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()
             
-            //event
-            emit RepayBorrow(payer: from.owner?.address, borrower: self.owner?.address, kind: FlowToken.getType(), repayAmount: from.balance)
+            // event
+            emit RepayBorrow(
+                payer: from.owner?.address,
+                borrower: self.owner?.address,
+                kind: FlowToken.getType(),
+                repayAmount: from.balance
+            )
 
             TokenLendingPlace.TokenVaultFlow.deposit(from: <- from )
             TokenLendingPlace.updatePriceAndInterest()
         }
 
-        //user repay FUSD
-        pub fun repayFUSD(from: @FUSD.Vault){
-            pre{
-                self.myBorrowingmFUSD - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice() >= 0.0: "Repay too much fusd"
+        // User repays FUSD
+        pub fun repayFUSD(from: @FUSD.Vault) {
+            pre {
+                self.myBorrowingmFUSD - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice() >= 0.0: "Repay too much FUSD"
             }
 
             TokenLendingPlace.mFUSDBorrowingAmountToken = TokenLendingPlace.mFUSDBorrowingAmountToken - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
             self.myBorrowingmFUSD = self.myBorrowingmFUSD - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
             
-            //event
-            emit RepayBorrow(payer: from.owner?.address, borrower: self.owner?.address, kind: FUSD.getType(), repayAmount: from.balance)
+            // event
+            emit RepayBorrow(
+                payer: from.owner?.address,
+                borrower: self.owner?.address,
+                kind: FUSD.getType(),
+                repayAmount: from.balance
+            )
 
             TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from )
             TokenLendingPlace.updatePriceAndInterest()
         }
             
-        //user repay BLT
-        pub fun repayBLT(from: @BloctoToken.Vault){
-           pre{
-                self.myBorrowingmBLT -  from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice() >= 0.0: "Repay too much blt"
+        // User repays BLT
+        pub fun repayBLT(from: @BloctoToken.Vault) {
+           pre {
+                self.myBorrowingmBLT -  from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice() >= 0.0: "Repay too much BLT"
             }
 
             TokenLendingPlace.mBLTBorrowingAmountToken = TokenLendingPlace.mBLTBorrowingAmountToken - from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice()
             self.myBorrowingmBLT = self.myBorrowingmBLT -  from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice()
             
-            //event
-            emit RepayBorrow(payer: from.owner?.address, borrower: self.owner?.address, kind: BloctoToken.getType(), repayAmount: from.balance)
+            // event
+            emit RepayBorrow(
+                payer: from.owner?.address,
+                borrower: self.owner?.address,
+                kind: BloctoToken.getType(),
+                repayAmount: from.balance
+            )
 
             TokenLendingPlace.TokenVaultBLT.deposit(from: <- from )
             TokenLendingPlace.updatePriceAndInterest()
         }
 
-        //Check does user borrowing exceeds the loan limit
+        // Check if the borrowing amount over the loan limit
         pub fun checkBorrowValid() {
-            assert(self.getMyTotalborrow() / self.getMyTotalsupply() < TokenLendingPlace.loanToValueRatio , message: "greater then loanToValueRatio")
+            assert(
+                self.getMyTotalborrow() / self.getMyTotalsupply() < TokenLendingPlace.loanToValueRatio, 
+                message: "It's greater than loanToValueRatio"
+            )
         }
 
-        //Check does user borrowing exceeds the UtilizationRate
+        // Check if the borrowing amount over the UtilizationRate
         pub fun checkLiquidValid() {
-            assert(self.getMyTotalborrow() / self.getMyTotalsupply() > TokenLendingPlace.optimalUtilizationRate , message: "less then optimalUtilizationRate")
+            assert(
+                self.getMyTotalborrow() / self.getMyTotalsupply() > TokenLendingPlace.optimalUtilizationRate,
+                message: "It's less than optimalUtilizationRate"
+            )
         }
 
-        //Check if user deposit exceeds the deposit limit
+        // Check if the deposit amount over the deposit limit
         pub fun checkDepositValid() {
-            assert((TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice()) < TokenLendingPlace.depositeLimitFLOWToken , message: "greater then depositeLimitFLOWToken")
-            assert((TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice()) < TokenLendingPlace.depositeLimitFUSD , message: "greater then depositeLimitFUSD")
-            assert((TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice()) < TokenLendingPlace.depositeLimitBLTToken , message: "greater then depositeLimitBLTToken")
+            assert(
+                (TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice()) < TokenLendingPlace.depositeLimitFLOWToken,
+                message: "It's greater than depositeLimitFLOWToken"
+            )
+            assert(
+                (TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice()) < TokenLendingPlace.depositeLimitFUSD,
+                message: "It's greater than depositeLimitFUSD"
+            )
+            assert(
+                (TokenLendingPlace.TokenVaultBLT.balance + TokenLendingPlace.mBLTBorrowingAmountToken * TokenLendingPlace.getmBLTBorrowingTokenPrice()) < TokenLendingPlace.depositeLimitBLTToken,
+                message: "It's greater than depositeLimitBLTToken"
+            )
         }
 
-        //liquidate the user who exceeds the UtilizationRate
-        pub fun liquidateFlow(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection){
+        // Liquidate the user over the UtilizationRate
+        pub fun liquidateFlow(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection) {
             self.checkLiquidValid()
-            //Flow in Flow out
-            if(from.getType() == Type<@FlowToken.Vault>()) {
+            // FLOW in, FLOW out
+            if (from.getType() == Type<@FlowToken.Vault>()) {
 
-                assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "liquidate too much flow")
+                assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FLOW")
                 self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: FlowToken.getType(), kindSeize: FlowToken.getType(), repayAmount: from.balance, seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address,
+                    borrower: self.owner?.address,
+                    kindRepay: FlowToken.getType(),
+                    kindSeize: FlowToken.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultFlow.deposit(from: <- from)
 
                 self.mFlow = self.mFlow - (repaymoney / TokenLendingPlace.getmFlowTokenPrice())
 
-            } else if( from.getType() == Type<@FUSD.Vault>()) {
-                //FUSD in Flow out
-                assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "liquidate too much flow")
+            } else if (from.getType() == Type<@FUSD.Vault>()) {
+                // FUSD in, FLOW out
+                assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FLOW")
                 self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: FUSD.getType(), kindSeize: FlowToken.getType(), repayAmount: from.balance, seizeTokens: (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address,
+                    borrower: self.owner?.address,
+                    kindRepay: FUSD.getType(),
+                    kindSeize: FlowToken.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens: (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
 
                 self.mFlow = self.mFlow - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice())
-            } else if( from.getType() == Type<@BloctoToken.Vault>()) {
-                 //BLT in Flow out
-                assert(self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice()) >= 0.0, message: "liquidate too much flow")
+            } else if (from.getType() == Type<@BloctoToken.Vault>()) {
+                // BLT in, FLOW out
+                assert(self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FLOW")
                 self.myBorrowingmBLT = self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: BloctoToken.getType(), kindSeize: FlowToken.getType(), repayAmount: from.balance, seizeTokens: (repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address,
+                    borrower: self.owner?.address,
+                    kindRepay: BloctoToken.getType(),
+                    kindSeize: FlowToken.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens: (repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultBLT.deposit(from: <- from)
 
@@ -541,49 +649,70 @@ pub contract TokenLendingPlace {
             TokenLendingPlace.updatePriceAndInterest()
         }
 
-        pub fun liquidateFUSD(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection){
+        pub fun liquidateFUSD(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection) {
             self.checkLiquidValid()
-            //Flow in FUSD out
-            if(from.getType() == Type<@FlowToken.Vault>()) {
-                assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "liquidate too much FUSD")
+            // FLOW in, FUSD out
+            if (from.getType() == Type<@FlowToken.Vault>()) {
+                assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FUSD")
                 self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: FlowToken.getType(), kindSeize: FUSD.getType(), repayAmount: from.balance, seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address,
+                    borrower: self.owner?.address,
+                    kindRepay: FlowToken.getType(),
+                    kindSeize: FUSD.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultFlow.deposit(from: <- from)
 
                 self.mFUSD = self.mFUSD - (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
-            } else if( from.getType() == Type<@FUSD.Vault>()) {
-                //FUSD in FUSD out
-                assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "liquidate too much FUSD")
+            } else if (from.getType() == Type<@FUSD.Vault>()) {
+                // FUSD in, FUSD out
+                assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FUSD")
                 self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: FUSD.getType(), kindSeize: FUSD.getType(), repayAmount: from.balance, seizeTokens:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address,
+                    borrower: self.owner?.address,
+                    kindRepay: FUSD.getType(),
+                    kindSeize: FUSD.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
 
                 self.mFUSD = self.mFUSD - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
-            } else if( from.getType() == Type<@BloctoToken.Vault>()) {
-                 //BLT in FUSD out
-                assert(self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice()) >= 0.0, message: "liquidate too much FUSD")
+            } else if (from.getType() == Type<@BloctoToken.Vault>()) {
+                 // BLT in, FUSD out
+                assert(self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FUSD")
                 self.myBorrowingmBLT = self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: BloctoToken.getType(), kindSeize: FUSD.getType(), repayAmount: from.balance, seizeTokens:(repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address,
+                    borrower: self.owner?.address,
+                    kindRepay: BloctoToken.getType(),
+                    kindSeize: FUSD.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens:(repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultBLT.deposit(from: <- from)
 
@@ -592,49 +721,69 @@ pub contract TokenLendingPlace {
             TokenLendingPlace.updatePriceAndInterest()
         }
 
-        pub fun liquidateBLT(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection){
+        pub fun liquidateBLT(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection) {
             self.checkLiquidValid()
-            //Flow in BLT out
-            if(from.getType() == Type<@FlowToken.Vault>()) {
-                assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "liquidate too much BLT")
+            // FLOW in, BLT out
+            if (from.getType() == Type<@FlowToken.Vault>()) {
+                assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much BLT")
                 self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemBLT(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: FlowToken.getType(), kindSeize: BloctoToken.getType(), repayAmount: from.balance, seizeTokens:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address,
+                    borrower: self.owner?.address,
+                    kindRepay: FlowToken.getType(),
+                    kindSeize: BloctoToken.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultFlow.deposit(from: <- from)
 
                 self.mBLT = self.mBLT - (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice())
-            } else if( from.getType() == Type<@FUSD.Vault>()) {
-                //FUSD in BLT out
-                assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "liquidate too much BLT")
+            } else if (from.getType() == Type<@FUSD.Vault>()) {
+                // FUSD in, BLT out
+                assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much BLT")
                 self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemBLT(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: FUSD.getType(), kindSeize: BloctoToken.getType(), repayAmount: from.balance, seizeTokens:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address,
+                    borrower: self.owner?.address,
+                    kindRepay: FUSD.getType(),
+                    kindSeize: BloctoToken.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
 
                 self.mBLT = self.mBLT - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice())
-            } else if( from.getType() == Type<@BloctoToken.Vault>()) {
-                 //BLT in BLT out
-                assert(self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice()) >= 0.0, message: "liquidate too much BLT")
+            } else if (from.getType() == Type<@BloctoToken.Vault>()) {
+                // BLT in, BLT out
+                assert(self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much BLT")
                 self.myBorrowingmBLT = self.myBorrowingmBLT - (from.balance / TokenLendingPlace.getmBLTBorrowingTokenPrice())
 
                 let repaymoney = from.balance
 
                 liquidatorVault.depositemBLT(from:(repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice()))
                 
-                //event
-                emit LiquidateBorrow(liquidator: from.owner?.address, borrower: self.owner?.address, kindRepay: BloctoToken.getType(), kindSeize: BloctoToken.getType(), repayAmount: from.balance, seizeTokens:(repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice()))
+                // event
+                emit LiquidateBorrow(
+                    liquidator: from.owner?.address, borrower: self.owner?.address,
+                    kindRepay: BloctoToken.getType(),
+                    kindSeize: BloctoToken.getType(),
+                    repayAmount: from.balance,
+                    seizeTokens:(repaymoney * TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.BLTTokenRealPrice / TokenLendingPlace.getmBLTTokenPrice())
+                )
 
                 TokenLendingPlace.TokenVaultBLT.deposit(from: <- from)
 
@@ -682,7 +831,7 @@ pub contract TokenLendingPlace {
         self.FlowTokenRealPrice = 10.0
         self.FUSDRealPrice = 1.0
         self.BLTTokenRealPrice = 4.0
-        self.finalTimestamp = 0.0 //getCurrentBlock().height
+        self.finalTimestamp = 0.0 // getCurrentBlock().height
 
         self.mFlowBorrowingAmountToken = 0.0
         self.mFUSDBorrowingAmountToken = 0.0

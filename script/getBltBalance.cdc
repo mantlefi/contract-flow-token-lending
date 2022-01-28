@@ -6,7 +6,7 @@ pub fun main(address: Address): UFix64 {
 
     let vaultRef = account.getCapability(/public/bloctoTokenBalance)!
         .borrow<&BloctoToken.Vault{FungibleToken.Balance}>()
-        ?? panic("Could not borrow Balance reference to the Vault")
+        ?? panic("Could not borrow balance reference to the Vault")
 
     return vaultRef.balance
 }
