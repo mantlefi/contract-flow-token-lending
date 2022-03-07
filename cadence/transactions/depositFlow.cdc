@@ -1,10 +1,10 @@
-import BloctoToken from 0x05
-import TokenLendingPlace from 0x04
+import FlowToken from 0xf8d6e0586b0a20c7
+import TokenLendingPlace from 0xf8d6e0586b0a20c7
 
 transaction(amount: UFix64) {
-
+  
     // Temporary vault object which holds the transferred balance
-    var vaultRef: &BloctoToken.Vault
+    var temporaryVault: @FlowToken.Vault
     var lendingPlace: &TokenLendingPlace.TokenLendingCollection
 
     prepare(acct: AuthAccount) {
@@ -14,20 +14,20 @@ transaction(amount: UFix64) {
             acct.link<&TokenLendingPlace.TokenLendingCollection{TokenLendingPlace.TokenLendingPublic}>(TokenLendingPlace.CollectionPublicPath, target: TokenLendingPlace.CollectionStoragePath)
         }
         
-        // Borrow a reference of valut and withdraw tokens, then call the deposit function with that reference
-        self.vaultRef = acct.borrow<&BloctoToken.Vault>(from: /storage/bloctoTokenVault)
-            ?? panic("Could not borrow a reference to the owner's BLT vault")  
+        // Borrow a reference of valut and withdraw tokens, then call the withdraw function with that reference
+        let vaultRef = acct.borrow<&FlowToken.Vault>(from: /storage/flowTokenVault)
+            ?? panic("Could not borrow a reference to the owner's vault")
+        
+        self.temporaryVault <- vaultRef.withdraw(amount: amount) as! @FlowToken.Vault
 
         self.lendingPlace = acct.borrow<&TokenLendingPlace.TokenLendingCollection>(from: TokenLendingPlace.CollectionStoragePath)
             ?? panic("Could not borrow TokenLendingPlace reference")
     }
 
     execute {
-        var vault <- self.lendingPlace.removeLiquidity(_amount: amount, _token: 2)
+        self.lendingPlace.addLiquidity(from: <-self.temporaryVault)
 
-        self.vaultRef.deposit(from: <-vault)
-
-        log("Withdraw succeeded")
+        log("Deposit succeeded")
     }
 }
  

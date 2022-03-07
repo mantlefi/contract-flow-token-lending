@@ -11,9 +11,7 @@ pub fun main(accountAddr: Address): {String:UFix64?} {
     return {
         "supplyFlow": acctlendingRef.getmFlow() * TokenLendingPlace.getmFlowTokenPrice(),
         "supplyFUSD": acctlendingRef.getmFUSD() * TokenLendingPlace.getmFUSDTokenPrice(),
-        "supplyBlt": acctlendingRef.getmBLT() * TokenLendingPlace.getmBLTTokenPrice(),
         "borrowFlow": acctlendingRef.getMyBorrowingmFlow() *  TokenLendingPlace.getmFlowBorrowingTokenPrice(),
         "borrowFUSD": acctlendingRef.getMyBorrowingmFUSD() * TokenLendingPlace.getmFUSDBorrowingTokenPrice(),
-        "borrowBlt": acctlendingRef.getMyBorrowingmBLT() * TokenLendingPlace.getmBLTBorrowingTokenPrice()
     }
 }

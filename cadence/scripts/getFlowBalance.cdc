@@ -1,5 +1,5 @@
-import FungibleToken from 0x01
-import FlowToken from 0x02
+import FungibleToken from 0xee82856bf20e2aa6
+import FlowToken from 0x0ae53cb6e3f42a79
 
 pub fun main(account: Address): UFix64 {
 

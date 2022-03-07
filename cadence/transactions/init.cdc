@@ -1,7 +1,6 @@
-import FungibleToken from 0x01
-import TokenLendingPlace from 0x04
-import FUSD from 0x03
-import BloctoToken from 0x05
+import FungibleToken from 0xee82856bf20e2aa6
+import TokenLendingPlace from 0xf8d6e0586b0a20c7
+import FUSD from 0xf8d6e0586b0a20c7
 
 // A template of transaction which could send tokens to other accounts with a vault by anyone
 transaction() {
@@ -31,25 +30,6 @@ transaction() {
         )
     }
 
-    // It's okay if the account is already set up, yet in this case, we don't want to replace it
-    if (acct.borrow<&BloctoToken.Vault>(from: BloctoToken.TokenStoragePath) == nil) {
-        // Create a new Blocto token vault and put it in storage
-        acct.save(<-BloctoToken.createEmptyVault(), to: BloctoToken.TokenStoragePath)
-
-        // Create a public capability to the vault 
-        // which only exposes deposit function through Receiver interface
-        acct.link<&BloctoToken.Vault{FungibleToken.Receiver}>(
-            BloctoToken.TokenPublicReceiverPath,
-            target: BloctoToken.TokenStoragePath
-        )
-
-        // Create a public capability to the vault
-        // which only exposes balance field through balance interface
-        acct.link<&BloctoToken.Vault{FungibleToken.Balance}>(
-            BloctoToken.TokenPublicBalancePath,
-            target: BloctoToken.TokenStoragePath
-        )
-    } 
   }
 }
  
