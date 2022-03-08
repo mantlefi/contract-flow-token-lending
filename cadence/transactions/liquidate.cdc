@@ -1,7 +1,7 @@
-import FlowToken from 0xFlowToken
-import FUSD from 0xFUSD
-import FungibleToken from 0xFungibleToken
-import TokenLendingPlace from 0xTokenLendingPlace
+import FlowToken from 0x7e60df042a9c0868
+import FUSD from 0xe223d8a629e49c68
+import FungibleToken from 0x9a0766d93b6608b7
+import TokenLendingPlace from 0x39beb54664f7ed80
 
 
 // This transaction is a template for a transaction that
