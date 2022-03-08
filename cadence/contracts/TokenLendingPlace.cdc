@@ -55,6 +55,12 @@ pub contract TokenLendingPlace {
     pub var depositeLimitFLOWToken: UFix64
     pub var depositeLimitFUSD: UFix64
 
+    //The penalty of liquidation
+    pub var liquidationPenalty: UFix64
+
+    //The liquidate limit at once
+    pub var liquidationLimit: UFix64
+
     // The parameter of protocol 
     pub var optimalUtilizationRate: UFix64
     pub var optimalBorrowApy: UFix64
@@ -63,6 +69,15 @@ pub contract TokenLendingPlace {
     // The path of protocol
     pub let CollectionStoragePath: StoragePath
     pub let CollectionPublicPath: PublicPath
+
+    // The storage path for the admin resource
+    pub let AdminStoragePath: StoragePath
+
+    // The storage Path for minters' MinterProxy
+    pub let SetterProxyStoragePath: StoragePath
+
+    // The public path for minters' MinterProxy capability
+    pub let SetterProxyPublicPath: PublicPath
 
     // The rate of borrowed FLOW
     pub fun getFlowUtilizationRate(): UFix64 {
@@ -186,12 +201,6 @@ pub contract TokenLendingPlace {
         
     }
 
-    // TODO: waiting for real feed source
-    // TODO: auth the caller
-    pub fun updatePricefromOracle(_FlowPrice: UFix64, _FUSDPrice: UFix64){
-      self.FlowTokenRealPrice = _FlowPrice
-      self.FUSDRealPrice = _FUSDPrice
-    }
 
     // LendingCollection
     //
@@ -463,11 +472,12 @@ pub contract TokenLendingPlace {
             if (from.getType() == Type<@FlowToken.Vault>()) {
 
                 assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FLOW")
+                assert((from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) / self.myBorrowingmFlow <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
                 self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
-
+                TokenLendingPlace.mFlowBorrowingAmountToken = TokenLendingPlace.mFlowBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
                 let repaymoney = from.balance
 
-                liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice()))
+                liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
                 
                 // event
                 emit LiquidateBorrow(
@@ -476,7 +486,7 @@ pub contract TokenLendingPlace {
                     kindRepay: FlowToken.getType(),
                     kindSeize: FlowToken.getType(),
                     repayAmount: from.balance,
-                    seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice())
+                    seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
                 )
 
                 TokenLendingPlace.TokenVaultFlow.deposit(from: <- from)
@@ -486,11 +496,12 @@ pub contract TokenLendingPlace {
             } else {
                 // FUSD in, FLOW out
                 assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FLOW")
+                assert((from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) / self.myBorrowingmFUSD <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
                 self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
-
+                TokenLendingPlace.mFUSDBorrowingAmountToken = TokenLendingPlace.mFUSDBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
                 let repaymoney = from.balance
 
-                liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice()))
+                liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
                 
                 // event
                 emit LiquidateBorrow(
@@ -504,7 +515,7 @@ pub contract TokenLendingPlace {
 
                 TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
 
-                self.mFlow = self.mFlow - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice())
+                self.mFlow = self.mFlow - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
             }
             TokenLendingPlace.updatePriceAndInterest()
         }
@@ -514,11 +525,12 @@ pub contract TokenLendingPlace {
             // FLOW in, FUSD out
             if (from.getType() == Type<@FlowToken.Vault>()) {
                 assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FUSD")
+                assert((from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) / self.myBorrowingmFlow <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
                 self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
-
+                TokenLendingPlace.mFlowBorrowingAmountToken = TokenLendingPlace.mFlowBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
                 let repaymoney = from.balance
 
-                liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice()))
+                liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
                 
                 // event
                 emit LiquidateBorrow(
@@ -527,7 +539,7 @@ pub contract TokenLendingPlace {
                     kindRepay: FlowToken.getType(),
                     kindSeize: FUSD.getType(),
                     repayAmount: from.balance,
-                    seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
+                    seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
                 )
 
                 TokenLendingPlace.TokenVaultFlow.deposit(from: <- from)
@@ -536,11 +548,12 @@ pub contract TokenLendingPlace {
             } else {
                 // FUSD in, FUSD out
                 assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FUSD")
+                assert((from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) / self.myBorrowingmFUSD <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
                 self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
-
+                TokenLendingPlace.mFUSDBorrowingAmountToken = TokenLendingPlace.mFUSDBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
                 let repaymoney = from.balance
 
-                liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice()))
+                liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
                 
                 // event
                 emit LiquidateBorrow(
@@ -554,7 +567,7 @@ pub contract TokenLendingPlace {
 
                 TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
 
-                self.mFUSD = self.mFUSD - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
+                self.mFUSD = self.mFUSD - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
             }
             TokenLendingPlace.updatePriceAndInterest()
         }
@@ -572,6 +585,60 @@ pub contract TokenLendingPlace {
     // createCollection returns a new collection resource to the caller
     pub fun createTokenLendingCollection(): @TokenLendingCollection {
         return <- create TokenLendingCollection()
+    }
+
+    pub resource Administrator {
+
+        pub fun createNewSetter(): @Setter {
+            return <- create Setter()
+        }
+
+    }
+
+    pub resource Setter {
+
+        pub fun updatePricefromOracle(_FlowPrice: UFix64, _FUSDPrice: UFix64){
+            TokenLendingPlace.FlowTokenRealPrice = _FlowPrice
+            TokenLendingPlace.FUSDRealPrice = _FUSDPrice
+        }
+        pub fun updateDepositLimit(_FlowLimit: UFix64, _FUSDLimit: UFix64){
+            TokenLendingPlace.depositeLimitFLOWToken = _FlowLimit
+            TokenLendingPlace.depositeLimitFUSD = _FUSDLimit
+        }
+
+    }
+    pub resource interface SetterProxyPublic {
+        pub fun setSetterCapability(cap: Capability<&Setter>)
+    }
+
+    pub resource SetterProxy: SetterProxyPublic {
+
+        // access(self) so nobody else can copy the capability and use it.
+        access(self) var SetterCapability: Capability<&Setter>?
+
+        // Anyone can call this, but only the admin can create Setter capabilities,
+        // so the type system constrains this to being called by the admin.
+        pub fun setSetterCapability(cap: Capability<&Setter>) {
+            self.SetterCapability = cap
+        }
+
+        pub fun updatePricefromOracle(_FlowPrice: UFix64, _FUSDPrice: UFix64){
+            TokenLendingPlace.FlowTokenRealPrice = _FlowPrice
+            TokenLendingPlace.FUSDRealPrice = _FUSDPrice
+        }
+        pub fun updateDepositLimit(_FlowLimit: UFix64, _FUSDLimit: UFix64){
+            TokenLendingPlace.depositeLimitFLOWToken = _FlowLimit
+            TokenLendingPlace.depositeLimitFUSD = _FUSDLimit
+        }
+
+        init() {
+            self.SetterCapability = nil
+        }
+
+    }
+
+    pub fun createSetterProxy(): @SetterProxy {
+        return <- create SetterProxy()
     }
 
     init() {
@@ -597,10 +664,21 @@ pub contract TokenLendingPlace {
         self.depositeLimitFLOWToken = 100000.0
         self.depositeLimitFUSD = 1000000.0
 
+        self.liquidationPenalty  = 0.05
+
+        self.liquidationLimit = 0.5
+
         self.optimalUtilizationRate = 0.8
         self.optimalBorrowApy = 0.08
         self.loanToValueRatio = 0.7
-        self.CollectionStoragePath = /storage/TokenLendingPlace003
-        self.CollectionPublicPath = /public/TokenLendingPlace003
+        self.CollectionStoragePath = /storage/TokenLendingPlace004
+        self.CollectionPublicPath = /public/TokenLendingPlace004
+
+        self.AdminStoragePath = /storage/TokenLendingPlaceAdmin
+        self.SetterProxyPublicPath = /public/TokenLendingPlaceMinterProxy
+        self.SetterProxyStoragePath = /storage/TokenLendingPlaceMinterProxy
+
+        let admin <- create Administrator()
+        self.account.save(<-admin, to: self.AdminStoragePath)
   }
 }
