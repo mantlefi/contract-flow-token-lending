@@ -40,7 +40,7 @@ transaction(borrowerAddress: Address) {
     var borrowArray = [borrowFlow, borrowFUSD]
     var largestSupply = supplyFlow
     var largestBorrow = borrowFlow
-    var counter = (1 as UInt64)
+    var counter = (0 as UInt64)
     self.supplyId = 0
     while counter <= 1 {
       if (largestSupply < supplyArray[counter] ) {
@@ -60,9 +60,9 @@ transaction(borrowerAddress: Address) {
     }
     var liauidateAmount = 0.0
     if(largestSupply > largestBorrow){
-      liauidateAmount = largestBorrow
+      liauidateAmount = largestBorrow / 2.0
     }else{
-      liauidateAmount = largestSupply
+      liauidateAmount = largestSupply / 2.0
     }
     if(self.borrowId == 0){
       let vaultRef = acct.borrow<&FlowToken.Vault>(from: /storage/flowTokenVault)
