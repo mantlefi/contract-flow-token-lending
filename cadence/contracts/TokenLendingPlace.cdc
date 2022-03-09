@@ -623,12 +623,12 @@ pub contract TokenLendingPlace {
         }
 
         pub fun updatePricefromOracle(_FlowPrice: UFix64, _FUSDPrice: UFix64){
-            TokenLendingPlace.FlowTokenRealPrice = _FlowPrice
-            TokenLendingPlace.FUSDRealPrice = _FUSDPrice
+            self.SetterCapability!
+            .borrow()!.updatePricefromOracle(_FlowPrice: _FlowPrice, _FUSDPrice:_FUSDPrice)
         }
         pub fun updateDepositLimit(_FlowLimit: UFix64, _FUSDLimit: UFix64){
-            TokenLendingPlace.depositeLimitFLOWToken = _FlowLimit
-            TokenLendingPlace.depositeLimitFUSD = _FUSDLimit
+            self.SetterCapability!
+            .borrow()!.updateDepositLimit(_FlowLimit: _FlowLimit, _FUSDLimit: _FUSDLimit)
         }
 
         init() {
