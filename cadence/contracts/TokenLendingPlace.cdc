@@ -160,18 +160,13 @@ pub contract TokenLendingPlace {
         }
     }
 
-    // Interface for users to publish their lending collection, which only exposes public methods
-    pub resource interface TokenLendingPublic {
-        pub fun getmFlow(): UFix64
-        pub fun getmFUSD(): UFix64
-        pub fun getMyBorrowingmFlow(): UFix64
-        pub fun getMyBorrowingmFUSD(): UFix64
-        pub fun getMyTotalsupply(): UFix64
-        pub fun getNetValue(): UFix64
-        pub fun getMyTotalborrow(): UFix64
-        pub fun liquidateFlow(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection)
-        pub fun liquidateFUSD(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection)
-    }
+    pub fun borrowCollection(address: Address): &TokenLendingCollection? {
+            if self.lendingClollection[address] != nil {
+                return &self.lendingClollection[address] as! &TokenLendingCollection
+            } else {
+                return nil
+            }
+        }
 
     // The method for updating mToken and interest rate in the protocol.
     // Every amount changing, such as deposite, repay, withdraw, borrow, and liquidty, will call this method,
@@ -214,7 +209,7 @@ pub contract TokenLendingPlace {
     //
     // The Token collection resource records every user data. Users join the protocol through this resource.
     //
-    pub resource TokenLendingCollection: TokenLendingPublic {
+    pub resource TokenLendingCollection {
 
         // User's mtoken amount, which minted when deposit
         access(self) var mFlow: UFix64
@@ -708,15 +703,15 @@ pub contract TokenLendingPlace {
         self.optimalUtilizationRate = 0.8
         self.optimalBorrowApy = 0.08
         self.loanToValueRatio = 0.7
-        self.CollectionStoragePath = /storage/TokenLendingPlace006
-        self.CollectionPublicPath = /public/TokenLendingPlace006
+        self.CollectionStoragePath = /storage/TokenLendingPlace008
+        self.CollectionPublicPath = /public/TokenLendingPlace008
 
         self.AdminStoragePath = /storage/TokenLendingPlaceAdmin
-        self.SetterProxyPublicPath = /public/TokenLendingPlaceMinterProxy
-        self.SetterProxyStoragePath = /storage/TokenLendingPlaceMinterProxy
+        self.SetterProxyPublicPath = /public/TokenLendingPlaceMinterProxy008
+        self.SetterProxyStoragePath = /storage/TokenLendingPlaceMinterProxy008
 
-        self.CertificateStoragePath = /storage/TokenLendingIUserCertificate001;
-        self.CertificatePrivatePath = /private/TokenLendingUserCertificate001;
+        self.CertificateStoragePath = /storage/TokenLendingIUserCertificate008;
+        self.CertificatePrivatePath = /private/TokenLendingUserCertificate008;
 
         let admin <- create Administrator()
         self.account.save(<-admin, to: self.AdminStoragePath)
