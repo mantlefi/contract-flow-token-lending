@@ -66,6 +66,8 @@ pub contract TokenLendingPlace {
     pub var optimalBorrowApy: UFix64
     pub var loanToValueRatio: UFix64
 
+    pub var lendingClollection: @{Address: TokenLendingCollection}
+
     // The path of protocol
     pub let CollectionStoragePath: StoragePath
     pub let CollectionPublicPath: PublicPath
@@ -73,11 +75,17 @@ pub contract TokenLendingPlace {
     // The storage path for the admin resource
     pub let AdminStoragePath: StoragePath
 
-    // The storage Path for minters' MinterProxy
+    // The storage path for minters' MinterProxy
     pub let SetterProxyStoragePath: StoragePath
 
     // The public path for minters' MinterProxy capability
     pub let SetterProxyPublicPath: PublicPath
+
+    // The storage path for user's certificate
+    pub let CertificateStoragePath: StoragePath
+
+    // The private path for user's certificate
+    pub let CertificatePrivatePath: PrivatePath
 
     // The rate of borrowed FLOW
     pub fun getFlowUtilizationRate(): UFix64 {
@@ -215,13 +223,15 @@ pub contract TokenLendingPlace {
         // User's mBorrowingtoken amount, which minted when borrow
         access(self) var myBorrowingmFlow: UFix64
         access(self) var myBorrowingmFUSD: UFix64
-
-        init () {
+        access(self) var ownerAddress: Address
+        
+        init (_owner: Address) {
             self.mFlow = 0.0
             self.mFUSD = 0.0
 
             self.myBorrowingmFlow = 0.0
             self.myBorrowingmFUSD = 0.0
+            self.ownerAddress = _owner
         }
 
         pub fun getmFlow(): UFix64 {
@@ -241,8 +251,11 @@ pub contract TokenLendingPlace {
         }
 
         // User deposits the token as Liquidity and mint mtoken
-        pub fun addLiquidity(from: @FungibleToken.Vault) {
-
+        pub fun addLiquidity(from: @FungibleToken.Vault, _cer: Capability<&UserCertificate>) {
+            assert(
+                self.ownerAddress == _cer.borrow()!.owner!.address,
+                message: "ownerAddress mismatch"
+            )
             var balance = 0.0
             if (from.getType() == Type<@FlowToken.Vault>()) {
                 balance = from.balance
@@ -273,8 +286,11 @@ pub contract TokenLendingPlace {
         }
 
         // User redeems mtoken and withdraw the token
-        pub fun removeLiquidity(_amount: UFix64, _token: Int): @FungibleToken.Vault {
-
+        pub fun removeLiquidity(_amount: UFix64, _token: Int, _cer: Capability<&UserCertificate>): @FungibleToken.Vault {
+            assert(
+                self.ownerAddress == _cer.borrow()!.owner!.address,
+                message: "ownerAddress mismatch"
+            )
             if (_token == 0) {
                 let mFlowAmount = _amount / TokenLendingPlace.getmFlowTokenPrice()
                 self.mFlow = self.mFlow - mFlowAmount
@@ -343,10 +359,14 @@ pub contract TokenLendingPlace {
         }
 
         // User borrows FLOW token
-        pub fun borrowFlow(_amount: UFix64): @FungibleToken.Vault {
+        pub fun borrowFlow(_amount: UFix64, _cer: Capability<&UserCertificate>): @FungibleToken.Vault {
             pre {
                 TokenLendingPlace.TokenVaultFlow.balance - _amount >= 0.0: "Don't have enough FLOW to borrow"
             }
+            assert(
+                self.ownerAddress == _cer.borrow()!.owner!.address,
+                message: "ownerAddress mismatch"
+            )
             
             let AmountofmToken = _amount / TokenLendingPlace.getmFlowBorrowingTokenPrice()
             TokenLendingPlace.mFlowBorrowingAmountToken = AmountofmToken + TokenLendingPlace.mFlowBorrowingAmountToken
@@ -368,10 +388,14 @@ pub contract TokenLendingPlace {
         }
 
         // User borrows FUSD token
-        pub fun borrowFUSD(_amount: UFix64): @FungibleToken.Vault {
+        pub fun borrowFUSD(_amount: UFix64, _cer: Capability<&UserCertificate>): @FungibleToken.Vault {
             pre {
                 TokenLendingPlace.TokenVaultFUSD.balance - _amount >= 0.0: "Don't have enough FUSD to borrow"
             }
+            assert(
+                self.ownerAddress == _cer.borrow()!.owner!.address,
+                message: "ownerAddress mismatch"
+            )
             
             let AmountofmToken = _amount / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
             TokenLendingPlace.mFUSDBorrowingAmountToken = AmountofmToken + TokenLendingPlace.mFUSDBorrowingAmountToken
@@ -394,11 +418,14 @@ pub contract TokenLendingPlace {
         
         
         // User repays FLow
-        pub fun repayFlow(from: @FlowToken.Vault) {
+        pub fun repayFlow(from: @FlowToken.Vault, _cer: Capability<&UserCertificate>) {
             pre {
                 self.myBorrowingmFlow - from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice() >= 0.0: "Repay too much FLOW"
             }
-
+            assert(
+                self.ownerAddress == _cer.borrow()!.owner!.address,
+                message: "ownerAddress mismatch"
+            )
             TokenLendingPlace.mFlowBorrowingAmountToken = TokenLendingPlace.mFlowBorrowingAmountToken - from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()
             self.myBorrowingmFlow = self.myBorrowingmFlow - from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()
             
@@ -415,11 +442,14 @@ pub contract TokenLendingPlace {
         }
 
         // User repays FUSD
-        pub fun repayFUSD(from: @FUSD.Vault) {
+        pub fun repayFUSD(from: @FUSD.Vault, _cer: Capability<&UserCertificate>) {
             pre {
                 self.myBorrowingmFUSD - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice() >= 0.0: "Repay too much FUSD"
             }
-
+            assert(
+                self.ownerAddress == _cer.borrow()!.owner!.address,
+                message: "ownerAddress mismatch"
+            )
             TokenLendingPlace.mFUSDBorrowingAmountToken = TokenLendingPlace.mFUSDBorrowingAmountToken - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
             self.myBorrowingmFUSD = self.myBorrowingmFUSD - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
             
@@ -582,9 +612,14 @@ pub contract TokenLendingPlace {
         
     }
 
+    pub resource UserCertificate {};
+    pub fun createCertificate(): @UserCertificate {
+        return <- create UserCertificate()
+    };
+
     // createCollection returns a new collection resource to the caller
-    pub fun createTokenLendingCollection(): @TokenLendingCollection {
-        return <- create TokenLendingCollection()
+    pub fun createTokenLendingCollection(_cer: Capability<&UserCertificate>) {
+        TokenLendingPlace.lendingClollection[_cer.borrow()!.owner!.address] <-! create TokenLendingCollection( _owner : _cer.borrow()!.owner!.address)
     }
 
     pub resource Administrator {
@@ -645,6 +680,8 @@ pub contract TokenLendingPlace {
         self.TokenVaultFlow <- FlowToken.createEmptyVault() as! @FlowToken.Vault
         self.TokenVaultFUSD <- FUSD.createEmptyVault()
 
+        self.lendingClollection <- {}
+
         self.mFlowInterestRate = 0.0
         self.mFUSDInterestRate = 0.0
         self.mFlowBorrowingInterestRate = 0.0
@@ -671,12 +708,15 @@ pub contract TokenLendingPlace {
         self.optimalUtilizationRate = 0.8
         self.optimalBorrowApy = 0.08
         self.loanToValueRatio = 0.7
-        self.CollectionStoragePath = /storage/TokenLendingPlace004
-        self.CollectionPublicPath = /public/TokenLendingPlace004
+        self.CollectionStoragePath = /storage/TokenLendingPlace006
+        self.CollectionPublicPath = /public/TokenLendingPlace006
 
         self.AdminStoragePath = /storage/TokenLendingPlaceAdmin
         self.SetterProxyPublicPath = /public/TokenLendingPlaceMinterProxy
         self.SetterProxyStoragePath = /storage/TokenLendingPlaceMinterProxy
+
+        self.CertificateStoragePath = /storage/TokenLendingIUserCertificate001;
+        self.CertificatePrivatePath = /private/TokenLendingUserCertificate001;
 
         let admin <- create Administrator()
         self.account.save(<-admin, to: self.AdminStoragePath)

@@ -3,12 +3,20 @@ import TokenLendingPlace from 0xf8d6e0586b0a20c7
 import FUSD from 0xf8d6e0586b0a20c7
 
 // A template of transaction which could send tokens to other accounts with a vault by anyone
+// This transaction is a template for a transaction that
+// could be used by anyone to send tokens to another account
+// that owns a Vault
 transaction() {
   prepare(acct: AuthAccount) {
-    if acct.borrow<&AnyResource{TokenLendingPlace.TokenLendingPublic}>(from: TokenLendingPlace.CollectionStoragePath) == nil {
-        let lendingPlace <- TokenLendingPlace.createTokenLendingCollection()
-        acct.save(<-lendingPlace, to: TokenLendingPlace.CollectionStoragePath)
-        acct.link<&TokenLendingPlace.TokenLendingCollection{TokenLendingPlace.TokenLendingPublic}>(TokenLendingPlace.CollectionPublicPath, target: TokenLendingPlace.CollectionStoragePath)
+    if (acct.borrow<&TokenLendingPlace.UserCertificate>(from: TokenLendingPlace.CertificateStoragePath) == nil) {
+let userCertificate <- TokenLendingPlace.createCertificate()
+acct.save(<-userCertificate, to: TokenLendingPlace.CertificateStoragePath)
+acct.link<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath, target: TokenLendingPlace.CertificateStoragePath)
+}
+    if TokenLendingPlace.lendingClollection[acct.address] == nil {
+    let userCertificateCap = acct.getCapability<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath)
+
+        TokenLendingPlace.createTokenLendingCollection(_cer: userCertificateCap)
     }
     if (acct.borrow<&FUSD.Vault>(from: /storage/fusdVault) == nil) {
             
@@ -32,4 +40,5 @@ transaction() {
 
   }
 }
+ 
  

@@ -6,13 +6,19 @@ transaction(amount: UFix64) {
     // Temporary vault object which holds the transferred balance
     var temporaryVault: @FUSD.Vault
     var lendingPlace: &TokenLendingPlace.TokenLendingCollection
+    var userCertificateCap: Capability<&TokenLendingPlace.UserCertificate>
 
     prepare(acct: AuthAccount) {
-        if acct.borrow<&AnyResource{TokenLendingPlace.TokenLendingPublic}>(from: TokenLendingPlace.CollectionStoragePath) == nil {
-            let lendingPlace <- TokenLendingPlace.createTokenLendingCollection()
-            acct.save(<-lendingPlace, to: TokenLendingPlace.CollectionStoragePath)
-            acct.link<&TokenLendingPlace.TokenLendingCollection{TokenLendingPlace.TokenLendingPublic}>(TokenLendingPlace.CollectionPublicPath, target: TokenLendingPlace.CollectionStoragePath)
-        }
+        if (acct.borrow<&TokenLendingPlace.UserCertificate>(from: TokenLendingPlace.CertificateStoragePath) == nil) {
+      let userCertificate <- TokenLendingPlace.createCertificate()
+      acct.save(<-userCertificate, to: TokenLendingPlace.CertificateStoragePath)
+      acct.link<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath, target: TokenLendingPlace.CertificateStoragePath)
+    }
+
+    if TokenLendingPlace.lendingClollection[acct.address] == nil {
+      let userCertificateCap = acct.getCapability<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath)
+      TokenLendingPlace.createTokenLendingCollection(_cer: userCertificateCap)
+    }
 
         // Borrow a reference of valut and withdraw tokens, then call the withdraw function with that reference
         let vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/fusdVault)
@@ -20,14 +26,16 @@ transaction(amount: UFix64) {
         
         self.temporaryVault <- vaultRef.withdraw(amount: amount) as! @FUSD.Vault
 
-        self.lendingPlace = acct.borrow<&TokenLendingPlace.TokenLendingCollection>(from: TokenLendingPlace.CollectionStoragePath)
-            ?? panic("Could not borrow TokenLendingPlace reference")
+        self.userCertificateCap = acct.getCapability<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath)
+
+        self.lendingPlace = TokenLendingPlace.borrowCollection(address: acct.address)
+                    ?? panic("No collection with that address in TokenLendingPlace")
     }
 
     execute {
-        self.lendingPlace.addLiquidity(from: <-self.temporaryVault)
+        self.lendingPlace.addLiquidity(from: <-self.temporaryVault, _cer: self.userCertificateCap)
 
-        log("Deposit succeeded!")
+        log("Deposit succeeded")
     }
 }
  

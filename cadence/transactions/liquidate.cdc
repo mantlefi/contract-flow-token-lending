@@ -1,7 +1,7 @@
-import FlowToken from 0x7e60df042a9c0868
-import FUSD from 0xe223d8a629e49c68
-import FungibleToken from 0x9a0766d93b6608b7
-import TokenLendingPlace from 0x39beb54664f7ed80
+import FlowToken from 0x02
+import FUSD from 0x03
+import FungibleToken from 0x01
+import TokenLendingPlace from 0x04
 
 
 // This transaction is a template for a transaction that
@@ -12,26 +12,29 @@ transaction(borrowerAddress: Address) {
 
   // Temporary Vault object that holds the balance that is being transferred
   var liquidatorPlace: &TokenLendingPlace.TokenLendingCollection
-  var lendingPlaceRef : &AnyResource{TokenLendingPlace.TokenLendingPublic}
+  var lendingPlaceRef : &TokenLendingPlace.TokenLendingCollection
   var supplyId: UInt64
   var borrowId: UInt64
 
 
   prepare(acct: AuthAccount) {
-   if acct.borrow<&AnyResource{TokenLendingPlace.TokenLendingPublic}>(from: TokenLendingPlace.CollectionStoragePath) == nil {
-            let lendingPlace <- TokenLendingPlace.createTokenLendingCollection()
-            acct.save(<-lendingPlace, to: TokenLendingPlace.CollectionStoragePath)
-            acct.link<&TokenLendingPlace.TokenLendingCollection{TokenLendingPlace.TokenLendingPublic}>(TokenLendingPlace.CollectionPublicPath, target: TokenLendingPlace.CollectionStoragePath)
-        }
+    if (acct.borrow<&TokenLendingPlace.UserCertificate>(from: TokenLendingPlace.CertificateStoragePath) == nil) {
+      let userCertificate <- TokenLendingPlace.createCertificate()
+      acct.save(<-userCertificate, to: TokenLendingPlace.CertificateStoragePath)
+      acct.link<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath, target: TokenLendingPlace.CertificateStoragePath)
+    }
 
-    self.liquidatorPlace = acct.borrow<&TokenLendingPlace.TokenLendingCollection>(from: TokenLendingPlace.CollectionStoragePath)
-            ?? panic("Could not borrow owner's vault reference2")
-    let account1 = getAccount(borrowerAddress)
-     let borrower = getAccount(borrowerAddress)
+    if TokenLendingPlace.lendingClollection[acct.address] == nil {
+      let userCertificateCap = acct.getCapability<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath)
+      TokenLendingPlace.createTokenLendingCollection(_cer: userCertificateCap)
+    }
 
-     self.lendingPlaceRef = borrower.getCapability<&AnyResource{TokenLendingPlace.TokenLendingPublic}>(TokenLendingPlace.CollectionPublicPath)
-            .borrow()
-            ?? panic("Could not borrow borrower's NFT Lending Place recource")
+    self.liquidatorPlace = TokenLendingPlace.borrowCollection(address: acct.address)
+                    ?? panic("No collection with that address in TokenLendingPlace")
+
+self.lendingPlaceRef = TokenLendingPlace.borrowCollection(address:borrowerAddress)
+                    ?? panic("No collection with that address in TokenLendingPlace")
+
     let supplyFlow = self.lendingPlaceRef.getmFlow()*TokenLendingPlace.getmFlowTokenPrice()*TokenLendingPlace.FlowTokenRealPrice
     let supplyFUSD = self.lendingPlaceRef.getmFUSD()*TokenLendingPlace.getmFUSDTokenPrice()*TokenLendingPlace.FUSDRealPrice
     let borrowFlow = self.lendingPlaceRef.getMyBorrowingmFlow()*TokenLendingPlace.getmFlowBorrowingTokenPrice()*TokenLendingPlace.FlowTokenRealPrice

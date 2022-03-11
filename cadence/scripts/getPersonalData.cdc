@@ -4,9 +4,8 @@ pub fun main(accountAddr: Address): {String:UFix64?} {
 
     // Get the public account object of accountAddr
     let account = getAccount(accountAddr)
-    let acctlendingRef = account.getCapability<&AnyResource{TokenLendingPlace.TokenLendingPublic}>(TokenLendingPlace.CollectionPublicPath)
-        .borrow()
-        ?? panic("Could not borrow accountAddr's TokenLendingPlace reference")
+    let acctlendingRef = TokenLendingPlace.borrowCollection(address: accountAddr)
+                    ?? panic("No collection with that address in TokenLendingPlace")
 
     var borrowLimit = acctlendingRef.getMyTotalsupply()* TokenLendingPlace.loanToValueRatio
     var liquidationThreshold = acctlendingRef.getMyTotalsupply() * TokenLendingPlace.optimalUtilizationRate
