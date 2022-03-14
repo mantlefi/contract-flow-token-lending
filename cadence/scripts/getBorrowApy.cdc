@@ -4,6 +4,6 @@ pub fun main(): {String: UFix64} {
 
     return {
         "flowBorrowApy": TokenLendingPlace.mFlowBorrowingInterestRate,
-        "fusdBorrowApy": TokenLendingPlace.mFUSDBorrowingInterestRate
+        "usdcBorrowApy": TokenLendingPlace.mFiatTokenBorrowingInterestRate
     }
 }

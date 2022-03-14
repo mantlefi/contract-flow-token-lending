@@ -1,6 +1,6 @@
 import FungibleToken from 0xf8d6e0586b0a20c7
 import FlowToken from 0xf8d6e0586b0a20c7
-import FUSD from 0xf8d6e0586b0a20c7
+import FiatToken from 0xf8d6e0586b0a20c7
 
 pub contract TokenLendingPlace {
 
@@ -21,39 +21,39 @@ pub contract TokenLendingPlace {
 
     // Where tokens are stored
     access(contract) let TokenVaultFlow: @FlowToken.Vault
-    access(contract) let TokenVaultFUSD: @FUSD.Vault
+    access(contract) let TokenVaultFiatToken: @FiatToken.Vault
 
     // Tokens minted in the protocol are represented as mToken, and the price of mToken will only increase
     // User will mint mToken when deposit
     pub var mFlowtokenPrice: UFix64 
-    pub var mFUSDtokenPrice: UFix64
+    pub var mFiatTokentokenPrice: UFix64
 
     // User will mint mBorrowingToken when borrow
     pub var mFlowBorrowingtokenPrice: UFix64 
-    pub var mFUSDBorrowingtokenPrice: UFix64
+    pub var mFiatTokenBorrowingtokenPrice: UFix64
 
     // The real price of token
     pub var FlowTokenRealPrice: UFix64
-    pub var FUSDRealPrice: UFix64
+    pub var FiatTokenRealPrice: UFix64
     
     // The APR of each deposit
     pub var mFlowInterestRate: UFix64
-    pub var mFUSDInterestRate: UFix64 
+    pub var mFiatTokenInterestRate: UFix64 
 
     // The APR of each borrow
     pub var mFlowBorrowingInterestRate: UFix64
-    pub var mFUSDBorrowingInterestRate: UFix64 
+    pub var mFiatTokenBorrowingInterestRate: UFix64 
 
     // The last interest update timestamp
     pub var finalTimestamp: UFix64
 
     // The total amount of tokens lent in the protocol, which affect the calculation of interest
     pub var mFlowBorrowingAmountToken: UFix64
-    pub var mFUSDBorrowingAmountToken: UFix64
+    pub var mFiatTokenBorrowingAmountToken: UFix64
 
     // The deposit limit of token
     pub var depositeLimitFLOWToken: UFix64
-    pub var depositeLimitFUSD: UFix64
+    pub var depositeLimitFiatToken: UFix64
 
     //The penalty of liquidation
     pub var liquidationPenalty: UFix64
@@ -96,10 +96,10 @@ pub contract TokenLendingPlace {
         }
     }
 
-    // The rate of borrowed FUSD
-    pub fun getFUSDUtilizationRate(): UFix64 {
-        if (TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice() != 0.0) {
-            return (TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice()) / (TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice())
+    // The rate of borrowed FiatToken
+    pub fun getFiatTokenUtilizationRate(): UFix64 {
+        if (TokenLendingPlace.TokenVaultFiatToken.balance + TokenLendingPlace.mFiatTokenBorrowingAmountToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice() != 0.0) {
+            return (TokenLendingPlace.mFiatTokenBorrowingAmountToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()) / (TokenLendingPlace.TokenVaultFiatToken.balance + TokenLendingPlace.mFiatTokenBorrowingAmountToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice())
         } else {
             return 0.0
         }
@@ -113,10 +113,10 @@ pub contract TokenLendingPlace {
         return TokenLendingPlace.mFlowBorrowingtokenPrice + delta * TokenLendingPlace.mFlowBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
 
-    // Get mFUSDBorrowingTokenPrice
-    pub fun getmFUSDBorrowingTokenPrice(): UFix64 {
+    // Get mFiatTokenBorrowingTokenPrice
+    pub fun getmFiatTokenBorrowingTokenPrice(): UFix64 {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mFUSDBorrowingtokenPrice + delta * TokenLendingPlace.mFUSDBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
+        return TokenLendingPlace.mFiatTokenBorrowingtokenPrice + delta * TokenLendingPlace.mFiatTokenBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
 
 
@@ -125,38 +125,38 @@ pub contract TokenLendingPlace {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
         return TokenLendingPlace.mFlowtokenPrice + delta * TokenLendingPlace.mFlowInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
-    // Get mFUSDTokenPrice
-    pub fun getmFUSDTokenPrice(): UFix64 {
+    // Get mFiatTokenTokenPrice
+    pub fun getmFiatTokenTokenPrice(): UFix64 {
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
-        return TokenLendingPlace.mFUSDtokenPrice + delta * TokenLendingPlace.mFUSDInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
+        return TokenLendingPlace.mFiatTokentokenPrice + delta * TokenLendingPlace.mFiatTokenInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0)
     }
 
     // Get total supply
     pub fun getTotalsupply(): {String: UFix64} {
         return {
             "flowTotalSupply": TokenLendingPlace.TokenVaultFlow.balance + TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice(),
-            "fusdTotalSupply": TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice()
+            "fiatTokenTotalSupply": TokenLendingPlace.TokenVaultFiatToken.balance + TokenLendingPlace.mFiatTokenBorrowingAmountToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()
         }
     }
     // Get deposit limit
     pub fun getDepositLimit(): {String: UFix64} {
         return {
             "flowDepositLimit":TokenLendingPlace.depositeLimitFLOWToken,
-            "fusdDepositLimit": TokenLendingPlace.depositeLimitFUSD
+            "fiatTokenDepositLimit": TokenLendingPlace.depositeLimitFiatToken
         }
     }
     // Get total borrow
     pub fun getTotalBorrow(): {String: UFix64} {
         return {
             "flowTotalBorrow":TokenLendingPlace.mFlowBorrowingAmountToken * TokenLendingPlace.getmFlowBorrowingTokenPrice(),
-            "fusdTotalBorrow": TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice()
+            "fiatTokenTotalBorrow": TokenLendingPlace.mFiatTokenBorrowingAmountToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()
         }
     }
     // Get token real price
     pub fun getTokenPrice(): {String: UFix64} {
         return {
             "flowTokenPrice":TokenLendingPlace.FlowTokenRealPrice,
-            "fusdTokenPrice": TokenLendingPlace.FUSDRealPrice
+            "fiatTokenTokenPrice": TokenLendingPlace.FiatTokenRealPrice
         }
     }
 
@@ -176,10 +176,10 @@ pub contract TokenLendingPlace {
         // Update token price
         let delta = getCurrentBlock().timestamp - TokenLendingPlace.finalTimestamp
         TokenLendingPlace.mFlowtokenPrice = TokenLendingPlace.mFlowtokenPrice + (delta * TokenLendingPlace.mFlowInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
-        TokenLendingPlace.mFUSDtokenPrice = TokenLendingPlace.mFUSDtokenPrice + (delta * TokenLendingPlace.mFUSDInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
+        TokenLendingPlace.mFiatTokentokenPrice = TokenLendingPlace.mFiatTokentokenPrice + (delta * TokenLendingPlace.mFiatTokenInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
 
         TokenLendingPlace.mFlowBorrowingtokenPrice = TokenLendingPlace.mFlowBorrowingtokenPrice + (delta * TokenLendingPlace.mFlowBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
-        TokenLendingPlace.mFUSDBorrowingtokenPrice = TokenLendingPlace.mFUSDBorrowingtokenPrice + (delta * TokenLendingPlace.mFUSDBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
+        TokenLendingPlace.mFiatTokenBorrowingtokenPrice = TokenLendingPlace.mFiatTokenBorrowingtokenPrice + (delta * TokenLendingPlace.mFiatTokenBorrowingInterestRate / ( 365.0 * 24.0 * 60.0 * 60.0))
         TokenLendingPlace.finalTimestamp = getCurrentBlock().timestamp
 
         // Update interestRate
@@ -192,13 +192,13 @@ pub contract TokenLendingPlace {
             TokenLendingPlace.mFlowInterestRate = TokenLendingPlace.mFlowBorrowingInterestRate * TokenLendingPlace.getFlowUtilizationRate()
         }
 
-        if (TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice() != 0.0) {
-            if (TokenLendingPlace.getFUSDUtilizationRate() < TokenLendingPlace.optimalUtilizationRate) {
-               TokenLendingPlace.mFUSDBorrowingInterestRate = TokenLendingPlace.getFUSDUtilizationRate() / TokenLendingPlace.optimalUtilizationRate*TokenLendingPlace.optimalBorrowApy
+        if (TokenLendingPlace.TokenVaultFiatToken.balance + TokenLendingPlace.mFiatTokenBorrowingAmountToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice() != 0.0) {
+            if (TokenLendingPlace.getFiatTokenUtilizationRate() < TokenLendingPlace.optimalUtilizationRate) {
+               TokenLendingPlace.mFiatTokenBorrowingInterestRate = TokenLendingPlace.getFiatTokenUtilizationRate() / TokenLendingPlace.optimalUtilizationRate*TokenLendingPlace.optimalBorrowApy
             } else {
-                TokenLendingPlace.mFUSDBorrowingInterestRate = (TokenLendingPlace.getFUSDUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * (1.0 - TokenLendingPlace.optimalUtilizationRate) + TokenLendingPlace.optimalUtilizationRate
+                TokenLendingPlace.mFiatTokenBorrowingInterestRate = (TokenLendingPlace.getFiatTokenUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * (1.0 - TokenLendingPlace.optimalUtilizationRate) + TokenLendingPlace.optimalUtilizationRate
             }
-            TokenLendingPlace.mFUSDInterestRate = TokenLendingPlace.mFUSDBorrowingInterestRate * TokenLendingPlace.getFUSDUtilizationRate()
+            TokenLendingPlace.mFiatTokenInterestRate = TokenLendingPlace.mFiatTokenBorrowingInterestRate * TokenLendingPlace.getFiatTokenUtilizationRate()
         }
 
         
@@ -213,19 +213,19 @@ pub contract TokenLendingPlace {
 
         // User's mtoken amount, which minted when deposit
         access(self) var mFlow: UFix64
-        access(self) var mFUSD: UFix64
+        access(self) var mFiatToken: UFix64
 
         // User's mBorrowingtoken amount, which minted when borrow
         access(self) var myBorrowingmFlow: UFix64
-        access(self) var myBorrowingmFUSD: UFix64
+        access(self) var myBorrowingmFiatToken: UFix64
         access(self) var ownerAddress: Address
         
         init (_owner: Address) {
             self.mFlow = 0.0
-            self.mFUSD = 0.0
+            self.mFiatToken = 0.0
 
             self.myBorrowingmFlow = 0.0
-            self.myBorrowingmFUSD = 0.0
+            self.myBorrowingmFiatToken = 0.0
             self.ownerAddress = _owner
         }
 
@@ -233,16 +233,16 @@ pub contract TokenLendingPlace {
             return self.mFlow
         }
 
-        pub fun getmFUSD(): UFix64 {
-            return self.mFUSD
+        pub fun getmFiatToken(): UFix64 {
+            return self.mFiatToken
         }
 
         pub fun getMyBorrowingmFlow(): UFix64 {
             return self.myBorrowingmFlow
         }
 
-        pub fun getMyBorrowingmFUSD(): UFix64 {
-            return self.myBorrowingmFUSD
+        pub fun getMyBorrowingmFiatToken(): UFix64 {
+            return self.myBorrowingmFiatToken
         }
 
         // User deposits the token as Liquidity and mint mtoken
@@ -265,14 +265,14 @@ pub contract TokenLendingPlace {
                 )
             } else {
                 balance = from.balance
-                TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
-                self.mFUSD = self.mFUSD + (balance / TokenLendingPlace.getmFUSDTokenPrice())
+                TokenLendingPlace.TokenVaultFiatToken.deposit(from: <- from)
+                self.mFiatToken = self.mFiatToken + (balance / TokenLendingPlace.getmFiatTokenTokenPrice())
                  // event
                 emit Mint(
                     minter: self.owner?.address,
                     kind: FlowToken.getType(),
                     mintAmount: balance,
-                    mintTokens: balance / TokenLendingPlace.getmFUSDTokenPrice()
+                    mintTokens: balance / TokenLendingPlace.getmFiatTokenTokenPrice()
                 )
             }
 
@@ -304,18 +304,18 @@ pub contract TokenLendingPlace {
                 return <- tokenVault
 
             } else {
-                let mFUSDAmount = _amount / TokenLendingPlace.getmFUSDTokenPrice()
-                self.mFUSD = self.mFUSD - mFUSDAmount
-                let tokenVault <- TokenLendingPlace.TokenVaultFUSD.withdraw(amount: _amount) 
+                let mFiatTokenAmount = _amount / TokenLendingPlace.getmFiatTokenTokenPrice()
+                self.mFiatToken = self.mFiatToken - mFiatTokenAmount
+                let tokenVault <- TokenLendingPlace.TokenVaultFiatToken.withdraw(amount: _amount) 
                 TokenLendingPlace.updatePriceAndInterest()
                 self.checkBorrowValid()
 
                 // event
                 emit Redeem(
                     redeemer: self.owner?.address,
-                    kind: FUSD.getType(),
+                    kind: FiatToken.getType(),
                     redeemAmount: _amount,
-                    redeemTokens: _amount / TokenLendingPlace.getmFUSDTokenPrice()
+                    redeemTokens: _amount / TokenLendingPlace.getmFiatTokenTokenPrice()
                 )
 
                 return <- tokenVault
@@ -327,8 +327,8 @@ pub contract TokenLendingPlace {
         pub fun getNetValue(): UFix64 {
 
             // to USD
-            let NetValue = self.mFlow * TokenLendingPlace.getmFlowTokenPrice() * TokenLendingPlace.FlowTokenRealPrice + self.mFUSD * TokenLendingPlace.getmFUSDTokenPrice() * TokenLendingPlace.FUSDRealPrice
-            - self.myBorrowingmFlow * TokenLendingPlace.getmFlowBorrowingTokenPrice()* TokenLendingPlace.FlowTokenRealPrice - self.myBorrowingmFUSD * TokenLendingPlace.getmFUSDBorrowingTokenPrice() * TokenLendingPlace.FUSDRealPrice 
+            let NetValue = self.mFlow * TokenLendingPlace.getmFlowTokenPrice() * TokenLendingPlace.FlowTokenRealPrice + self.mFiatToken * TokenLendingPlace.getmFiatTokenTokenPrice() * TokenLendingPlace.FiatTokenRealPrice
+            - self.myBorrowingmFlow * TokenLendingPlace.getmFlowBorrowingTokenPrice()* TokenLendingPlace.FlowTokenRealPrice - self.myBorrowingmFiatToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice() * TokenLendingPlace.FiatTokenRealPrice 
             
             return NetValue
         }
@@ -338,9 +338,9 @@ pub contract TokenLendingPlace {
             
             // to USD
             let FlowPower = self.mFlow * TokenLendingPlace.getmFlowTokenPrice() * TokenLendingPlace.FlowTokenRealPrice 
-            let FUSDPower = self.mFUSD * TokenLendingPlace.getmFUSDTokenPrice() * TokenLendingPlace.FUSDRealPrice
+            let FiatTokenPower = self.mFiatToken * TokenLendingPlace.getmFiatTokenTokenPrice() * TokenLendingPlace.FiatTokenRealPrice
 
-            return FlowPower + FUSDPower
+            return FlowPower + FiatTokenPower
         }
 
         // Get user's total borrow
@@ -348,9 +348,9 @@ pub contract TokenLendingPlace {
 
             // to USD
             let FlowBorrow = self.myBorrowingmFlow * TokenLendingPlace.getmFlowBorrowingTokenPrice() * TokenLendingPlace.FlowTokenRealPrice 
-            let FUSDBorrow = self.myBorrowingmFUSD * TokenLendingPlace.getmFUSDBorrowingTokenPrice() * TokenLendingPlace.FUSDRealPrice
+            let FiatTokenBorrow = self.myBorrowingmFiatToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice() * TokenLendingPlace.FiatTokenRealPrice
 
-            return FlowBorrow + FUSDBorrow
+            return FlowBorrow + FiatTokenBorrow
         }
 
         // User borrows FLOW token
@@ -382,29 +382,29 @@ pub contract TokenLendingPlace {
             return <- tokenVault
         }
 
-        // User borrows FUSD token
-        pub fun borrowFUSD(_amount: UFix64, _cer: Capability<&UserCertificate>): @FungibleToken.Vault {
+        // User borrows FiatToken token
+        pub fun borrowFiatToken(_amount: UFix64, _cer: Capability<&UserCertificate>): @FungibleToken.Vault {
             pre {
-                TokenLendingPlace.TokenVaultFUSD.balance - _amount >= 0.0: "Don't have enough FUSD to borrow"
+                TokenLendingPlace.TokenVaultFiatToken.balance - _amount >= 0.0: "Don't have enough FiatToken to borrow"
             }
             assert(
                 self.ownerAddress == _cer.borrow()!.owner!.address,
                 message: "ownerAddress mismatch"
             )
             
-            let AmountofmToken = _amount / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
-            TokenLendingPlace.mFUSDBorrowingAmountToken = AmountofmToken + TokenLendingPlace.mFUSDBorrowingAmountToken
+            let AmountofmToken = _amount / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()
+            TokenLendingPlace.mFiatTokenBorrowingAmountToken = AmountofmToken + TokenLendingPlace.mFiatTokenBorrowingAmountToken
 
-            self.myBorrowingmFUSD = AmountofmToken + self.myBorrowingmFUSD
+            self.myBorrowingmFiatToken = AmountofmToken + self.myBorrowingmFiatToken
 
-            let tokenVault <- TokenLendingPlace.TokenVaultFUSD.withdraw(amount: _amount)
+            let tokenVault <- TokenLendingPlace.TokenVaultFiatToken.withdraw(amount: _amount)
             TokenLendingPlace.updatePriceAndInterest()
             self.checkBorrowValid()
 
             // event         
             emit Borrow(
                 borrower: self.owner?.address,
-                kind: FUSD.getType(),
+                kind: FiatToken.getType(),
                 borrowAmount: _amount
             )
 
@@ -436,27 +436,27 @@ pub contract TokenLendingPlace {
             TokenLendingPlace.updatePriceAndInterest()
         }
 
-        // User repays FUSD
-        pub fun repayFUSD(from: @FUSD.Vault, _cer: Capability<&UserCertificate>) {
+        // User repays FiatToken
+        pub fun repayFiatToken(from: @FiatToken.Vault, _cer: Capability<&UserCertificate>) {
             pre {
-                self.myBorrowingmFUSD - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice() >= 0.0: "Repay too much FUSD"
+                self.myBorrowingmFiatToken - from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice() >= 0.0: "Repay too much FiatToken"
             }
             assert(
                 self.ownerAddress == _cer.borrow()!.owner!.address,
                 message: "ownerAddress mismatch"
             )
-            TokenLendingPlace.mFUSDBorrowingAmountToken = TokenLendingPlace.mFUSDBorrowingAmountToken - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
-            self.myBorrowingmFUSD = self.myBorrowingmFUSD - from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()
+            TokenLendingPlace.mFiatTokenBorrowingAmountToken = TokenLendingPlace.mFiatTokenBorrowingAmountToken - from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()
+            self.myBorrowingmFiatToken = self.myBorrowingmFiatToken - from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()
             
             // event
             emit RepayBorrow(
                 payer: from.owner?.address,
                 borrower: self.owner?.address,
-                kind: FUSD.getType(),
+                kind: FiatToken.getType(),
                 repayAmount: from.balance
             )
 
-            TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from )
+            TokenLendingPlace.TokenVaultFiatToken.deposit(from: <- from )
             TokenLendingPlace.updatePriceAndInterest()
         }
             
@@ -484,8 +484,8 @@ pub contract TokenLendingPlace {
                 message: "It's greater than depositeLimitFLOWToken"
             )
             assert(
-                (TokenLendingPlace.TokenVaultFUSD.balance + TokenLendingPlace.mFUSDBorrowingAmountToken * TokenLendingPlace.getmFUSDBorrowingTokenPrice()) < TokenLendingPlace.depositeLimitFUSD,
-                message: "It's greater than depositeLimitFUSD"
+                (TokenLendingPlace.TokenVaultFiatToken.balance + TokenLendingPlace.mFiatTokenBorrowingAmountToken * TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()) < TokenLendingPlace.depositeLimitFiatToken,
+                message: "It's greater than depositeLimitFiatToken"
             )
 
         }
@@ -519,80 +519,80 @@ pub contract TokenLendingPlace {
                 self.mFlow = self.mFlow - (repaymoney / TokenLendingPlace.getmFlowTokenPrice())
 
             } else {
-                // FUSD in, FLOW out
-                assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FLOW")
-                assert((from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) / self.myBorrowingmFUSD <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
-                self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
-                TokenLendingPlace.mFUSDBorrowingAmountToken = TokenLendingPlace.mFUSDBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
+                // FiatToken in, FLOW out
+                assert(self.myBorrowingmFiatToken - (from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FLOW")
+                assert((from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()) / self.myBorrowingmFiatToken <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
+                self.myBorrowingmFiatToken = self.myBorrowingmFiatToken - (from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice())
+                TokenLendingPlace.mFiatTokenBorrowingAmountToken = TokenLendingPlace.mFiatTokenBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice())
                 let repaymoney = from.balance
 
-                liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
+                liquidatorVault.depositemFlow(from:(repaymoney * TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
                 
                 // event
                 emit LiquidateBorrow(
                     liquidator: from.owner?.address,
                     borrower: self.owner?.address,
-                    kindRepay: FUSD.getType(),
+                    kindRepay: FiatToken.getType(),
                     kindSeize: FlowToken.getType(),
                     repayAmount: from.balance,
-                    seizeTokens: (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice())
+                    seizeTokens: (repaymoney * TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice())
                 )
 
-                TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
+                TokenLendingPlace.TokenVaultFiatToken.deposit(from: <- from)
 
-                self.mFlow = self.mFlow - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
+                self.mFlow = self.mFlow - (repaymoney * TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.getmFlowTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
             }
             TokenLendingPlace.updatePriceAndInterest()
         }
 
-        pub fun liquidateFUSD(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection) {
+        pub fun liquidateFiatToken(from: @FungibleToken.Vault, liquidatorVault: &TokenLendingCollection) {
             self.checkLiquidValid()
-            // FLOW in, FUSD out
+            // FLOW in, FiatToken out
             if (from.getType() == Type<@FlowToken.Vault>()) {
-                assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FUSD")
+                assert(self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FiatToken")
                 assert((from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice()) / self.myBorrowingmFlow <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
                 self.myBorrowingmFlow = self.myBorrowingmFlow - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
                 TokenLendingPlace.mFlowBorrowingAmountToken = TokenLendingPlace.mFlowBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFlowBorrowingTokenPrice())
                 let repaymoney = from.balance
 
-                liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
+                liquidatorVault.depositemFiatToken(from:(repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.getmFiatTokenTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
                 
                 // event
                 emit LiquidateBorrow(
                     liquidator: from.owner?.address,
                     borrower: self.owner?.address,
                     kindRepay: FlowToken.getType(),
-                    kindSeize: FUSD.getType(),
+                    kindSeize: FiatToken.getType(),
                     repayAmount: from.balance,
-                    seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
+                    seizeTokens: (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.getmFiatTokenTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
                 )
 
                 TokenLendingPlace.TokenVaultFlow.deposit(from: <- from)
 
-                self.mFUSD = self.mFUSD - (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
+                self.mFiatToken = self.mFiatToken - (repaymoney * TokenLendingPlace.FlowTokenRealPrice / TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.getmFiatTokenTokenPrice())
             } else {
-                // FUSD in, FUSD out
-                assert(self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FUSD")
-                assert((from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice()) / self.myBorrowingmFUSD <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
-                self.myBorrowingmFUSD = self.myBorrowingmFUSD - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
-                TokenLendingPlace.mFUSDBorrowingAmountToken = TokenLendingPlace.mFUSDBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFUSDBorrowingTokenPrice())
+                // FiatToken in, FiatToken out
+                assert(self.myBorrowingmFiatToken - (from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()) >= 0.0, message: "Liquidate too much FiatToken")
+                assert((from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()) / self.myBorrowingmFiatToken <= TokenLendingPlace.liquidationLimit, message: "Liquidate amount must less than liquidationLimit")
+                self.myBorrowingmFiatToken = self.myBorrowingmFiatToken - (from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice())
+                TokenLendingPlace.mFiatTokenBorrowingAmountToken = TokenLendingPlace.mFiatTokenBorrowingAmountToken - (from.balance / TokenLendingPlace.getmFiatTokenBorrowingTokenPrice())
                 let repaymoney = from.balance
 
-                liquidatorVault.depositemFUSD(from:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
+                liquidatorVault.depositemFiatToken(from:(repaymoney * TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.getmFiatTokenTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty)))
                 
                 // event
                 emit LiquidateBorrow(
                     liquidator: from.owner?.address,
                     borrower: self.owner?.address,
-                    kindRepay: FUSD.getType(),
-                    kindSeize: FUSD.getType(),
+                    kindRepay: FiatToken.getType(),
+                    kindSeize: FiatToken.getType(),
                     repayAmount: from.balance,
-                    seizeTokens:(repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice())
+                    seizeTokens:(repaymoney * TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.getmFiatTokenTokenPrice())
                 )
 
-                TokenLendingPlace.TokenVaultFUSD.deposit(from: <- from)
+                TokenLendingPlace.TokenVaultFiatToken.deposit(from: <- from)
 
-                self.mFUSD = self.mFUSD - (repaymoney * TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.FUSDRealPrice / TokenLendingPlace.getmFUSDTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
+                self.mFiatToken = self.mFiatToken - (repaymoney * TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.FiatTokenRealPrice / TokenLendingPlace.getmFiatTokenTokenPrice() / (1.0 - TokenLendingPlace.liquidationPenalty))
             }
             TokenLendingPlace.updatePriceAndInterest()
         }
@@ -601,8 +601,8 @@ pub contract TokenLendingPlace {
             self.mFlow = self.mFlow + from
         }
 
-        access(self) fun depositemFUSD(from: UFix64) {
-            self.mFUSD = self.mFUSD + from
+        access(self) fun depositemFiatToken(from: UFix64) {
+            self.mFiatToken = self.mFiatToken + from
         }
         
     }
@@ -627,13 +627,13 @@ pub contract TokenLendingPlace {
 
     pub resource Setter {
 
-        pub fun updatePricefromOracle(_FlowPrice: UFix64, _FUSDPrice: UFix64){
+        pub fun updatePricefromOracle(_FlowPrice: UFix64, _FiatTokenPrice: UFix64){
             TokenLendingPlace.FlowTokenRealPrice = _FlowPrice
-            TokenLendingPlace.FUSDRealPrice = _FUSDPrice
+            TokenLendingPlace.FiatTokenRealPrice = _FiatTokenPrice
         }
-        pub fun updateDepositLimit(_FlowLimit: UFix64, _FUSDLimit: UFix64){
+        pub fun updateDepositLimit(_FlowLimit: UFix64, _FiatTokenLimit: UFix64){
             TokenLendingPlace.depositeLimitFLOWToken = _FlowLimit
-            TokenLendingPlace.depositeLimitFUSD = _FUSDLimit
+            TokenLendingPlace.depositeLimitFiatToken = _FiatTokenLimit
         }
 
     }
@@ -652,13 +652,13 @@ pub contract TokenLendingPlace {
             self.SetterCapability = cap
         }
 
-        pub fun updatePricefromOracle(_FlowPrice: UFix64, _FUSDPrice: UFix64){
+        pub fun updatePricefromOracle(_FlowPrice: UFix64, _FiatTokenPrice: UFix64){
             self.SetterCapability!
-            .borrow()!.updatePricefromOracle(_FlowPrice: _FlowPrice, _FUSDPrice:_FUSDPrice)
+            .borrow()!.updatePricefromOracle(_FlowPrice: _FlowPrice, _FiatTokenPrice:_FiatTokenPrice)
         }
-        pub fun updateDepositLimit(_FlowLimit: UFix64, _FUSDLimit: UFix64){
+        pub fun updateDepositLimit(_FlowLimit: UFix64, _FiatTokenLimit: UFix64){
             self.SetterCapability!
-            .borrow()!.updateDepositLimit(_FlowLimit: _FlowLimit, _FUSDLimit: _FUSDLimit)
+            .borrow()!.updateDepositLimit(_FlowLimit: _FlowLimit, _FiatTokenLimit: _FiatTokenLimit)
         }
 
         init() {
@@ -673,28 +673,28 @@ pub contract TokenLendingPlace {
 
     init() {
         self.TokenVaultFlow <- FlowToken.createEmptyVault() as! @FlowToken.Vault
-        self.TokenVaultFUSD <- FUSD.createEmptyVault()
+        self.TokenVaultFiatToken <- FiatToken.createEmptyVault()
 
         self.lendingClollection <- {}
 
         self.mFlowInterestRate = 0.0
-        self.mFUSDInterestRate = 0.0
+        self.mFiatTokenInterestRate = 0.0
         self.mFlowBorrowingInterestRate = 0.0
-        self.mFUSDBorrowingInterestRate = 0.0
+        self.mFiatTokenBorrowingInterestRate = 0.0
         self.mFlowtokenPrice = 1.0
-        self.mFUSDtokenPrice = 1.0
+        self.mFiatTokentokenPrice = 1.0
         self.mFlowBorrowingtokenPrice = 1.0
-        self.mFUSDBorrowingtokenPrice = 1.0
+        self.mFiatTokenBorrowingtokenPrice = 1.0
 
         self.FlowTokenRealPrice = 10.0
-        self.FUSDRealPrice = 1.0
+        self.FiatTokenRealPrice = 1.0
         self.finalTimestamp = 0.0 // getCurrentBlock().height
 
         self.mFlowBorrowingAmountToken = 0.0
-        self.mFUSDBorrowingAmountToken = 0.0
+        self.mFiatTokenBorrowingAmountToken = 0.0
 
-        self.depositeLimitFLOWToken = 100000.0
-        self.depositeLimitFUSD = 1000000.0
+        self.depositeLimitFLOWToken = 10000.0
+        self.depositeLimitFiatToken = 50000.0
 
         self.liquidationPenalty  = 0.05
 
@@ -703,15 +703,15 @@ pub contract TokenLendingPlace {
         self.optimalUtilizationRate = 0.8
         self.optimalBorrowApy = 0.08
         self.loanToValueRatio = 0.7
-        self.CollectionStoragePath = /storage/TokenLendingPlace008
-        self.CollectionPublicPath = /public/TokenLendingPlace008
+        self.CollectionStoragePath = /storage/TokenLendingPlace001
+        self.CollectionPublicPath = /public/TokenLendingPlace001
 
         self.AdminStoragePath = /storage/TokenLendingPlaceAdmin
-        self.SetterProxyPublicPath = /public/TokenLendingPlaceMinterProxy008
-        self.SetterProxyStoragePath = /storage/TokenLendingPlaceMinterProxy008
+        self.SetterProxyPublicPath = /public/TokenLendingPlaceMinterProxy001
+        self.SetterProxyStoragePath = /storage/TokenLendingPlaceMinterProxy001
 
-        self.CertificateStoragePath = /storage/TokenLendingIUserCertificate008;
-        self.CertificatePrivatePath = /private/TokenLendingUserCertificate008;
+        self.CertificateStoragePath = /storage/TokenLendingUserCertificate001;
+        self.CertificatePrivatePath = /private/TokenLendingUserCertificate001;
 
         let admin <- create Administrator()
         self.account.save(<-admin, to: self.AdminStoragePath)

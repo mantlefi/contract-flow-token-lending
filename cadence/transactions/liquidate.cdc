@@ -1,5 +1,5 @@
 import FlowToken from 0x02
-import FUSD from 0x03
+import FiatToken from 0x03
 import FungibleToken from 0x01
 import TokenLendingPlace from 0x04
 
@@ -36,11 +36,11 @@ self.lendingPlaceRef = TokenLendingPlace.borrowCollection(address:borrowerAddres
                     ?? panic("No collection with that address in TokenLendingPlace")
 
     let supplyFlow = self.lendingPlaceRef.getmFlow()*TokenLendingPlace.getmFlowTokenPrice()*TokenLendingPlace.FlowTokenRealPrice
-    let supplyFUSD = self.lendingPlaceRef.getmFUSD()*TokenLendingPlace.getmFUSDTokenPrice()*TokenLendingPlace.FUSDRealPrice
+    let supplyFiatToken = self.lendingPlaceRef.getmFiatToken()*TokenLendingPlace.getmFiatTokenTokenPrice()*TokenLendingPlace.FiatTokenRealPrice
     let borrowFlow = self.lendingPlaceRef.getMyBorrowingmFlow()*TokenLendingPlace.getmFlowBorrowingTokenPrice()*TokenLendingPlace.FlowTokenRealPrice
-    let borrowFUSD  = self.lendingPlaceRef.getMyBorrowingmFUSD()*TokenLendingPlace.getmFUSDBorrowingTokenPrice()*TokenLendingPlace.FUSDRealPrice
-    var supplyArray = [supplyFlow, supplyFUSD]
-    var borrowArray = [borrowFlow, borrowFUSD]
+    let borrowFiatToken  = self.lendingPlaceRef.getMyBorrowingmFiatToken()*TokenLendingPlace.getmFiatTokenBorrowingTokenPrice()*TokenLendingPlace.FiatTokenRealPrice
+    var supplyArray = [supplyFlow, supplyFiatToken]
+    var borrowArray = [borrowFlow, borrowFiatToken]
     var largestSupply = supplyFlow
     var largestBorrow = borrowFlow
     var counter = (0 as UInt64)
@@ -74,16 +74,16 @@ self.lendingPlaceRef = TokenLendingPlace.borrowCollection(address:borrowerAddres
         if(self.supplyId == 0){
           self.lendingPlaceRef.liquidateFlow(from: <- temporaryVault, liquidatorVault: self.liquidatorPlace)
         }else{
-          self.lendingPlaceRef.liquidateFUSD(from: <- temporaryVault, liquidatorVault: self.liquidatorPlace)
+          self.lendingPlaceRef.liquidateFiatToken(from: <- temporaryVault, liquidatorVault: self.liquidatorPlace)
         }
     }else{
-      let vaultRef = acct.borrow<&FUSD.Vault>(from: /storage/fusdVault)
+      let vaultRef = acct.borrow<&FiatToken.Vault>(from: FiatToken.VaultStoragePath)
         ?? panic("Could not borrow a reference to the owner's vault")
-         var temporaryVault <- vaultRef.withdraw(amount: liauidateAmount/TokenLendingPlace.FUSDRealPrice)
+         var temporaryVault <- vaultRef.withdraw(amount: liauidateAmount/TokenLendingPlace.FiatTokenRealPrice)
         if(self.supplyId == 0){
           self.lendingPlaceRef.liquidateFlow(from: <- temporaryVault, liquidatorVault: self.liquidatorPlace)
         }else{
-          self.lendingPlaceRef.liquidateFUSD(from: <- temporaryVault, liquidatorVault: self.liquidatorPlace)
+          self.lendingPlaceRef.liquidateFiatToken(from: <- temporaryVault, liquidatorVault: self.liquidatorPlace)
         }
     }
   }
