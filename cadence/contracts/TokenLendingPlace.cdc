@@ -187,7 +187,7 @@ pub contract TokenLendingPlace {
             if (TokenLendingPlace.getFlowUtilizationRate() < TokenLendingPlace.optimalUtilizationRate) {
                 TokenLendingPlace.mFlowBorrowingInterestRate = TokenLendingPlace.getFlowUtilizationRate() / TokenLendingPlace.optimalUtilizationRate * TokenLendingPlace.optimalBorrowApy
             } else {
-               TokenLendingPlace.mFlowBorrowingInterestRate = (TokenLendingPlace.getFlowUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * ( 1.0 - TokenLendingPlace.optimalUtilizationRate) + TokenLendingPlace.optimalUtilizationRate
+               TokenLendingPlace.mFlowBorrowingInterestRate = (TokenLendingPlace.getFlowUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * ( 1.0 - TokenLendingPlace.optimalBorrowApy) + TokenLendingPlace.optimalBorrowApy
             }
             TokenLendingPlace.mFlowInterestRate = TokenLendingPlace.mFlowBorrowingInterestRate * TokenLendingPlace.getFlowUtilizationRate()
         }
@@ -196,7 +196,7 @@ pub contract TokenLendingPlace {
             if (TokenLendingPlace.getFiatTokenUtilizationRate() < TokenLendingPlace.optimalUtilizationRate) {
                TokenLendingPlace.mFiatTokenBorrowingInterestRate = TokenLendingPlace.getFiatTokenUtilizationRate() / TokenLendingPlace.optimalUtilizationRate*TokenLendingPlace.optimalBorrowApy
             } else {
-                TokenLendingPlace.mFiatTokenBorrowingInterestRate = (TokenLendingPlace.getFiatTokenUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * (1.0 - TokenLendingPlace.optimalUtilizationRate) + TokenLendingPlace.optimalUtilizationRate
+                TokenLendingPlace.mFiatTokenBorrowingInterestRate = (TokenLendingPlace.getFiatTokenUtilizationRate() - TokenLendingPlace.optimalUtilizationRate) / (1.0 - TokenLendingPlace.optimalUtilizationRate) * (1.0 - TokenLendingPlace.optimalBorrowApy) + TokenLendingPlace.optimalBorrowApy
             }
             TokenLendingPlace.mFiatTokenInterestRate = TokenLendingPlace.mFiatTokenBorrowingInterestRate * TokenLendingPlace.getFiatTokenUtilizationRate()
         }
