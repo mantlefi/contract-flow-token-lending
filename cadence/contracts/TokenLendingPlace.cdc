@@ -1,6 +1,6 @@
-import FungibleToken from 0xf8d6e0586b0a20c7
-import FlowToken from 0xf8d6e0586b0a20c7
-import FiatToken from 0xf8d6e0586b0a20c7
+import FungibleToken from 0xf233dcee88fe0abe
+import FlowToken from 0x1654653399040a61
+import FiatToken from 0xb19436aae4d94622
 
 pub contract TokenLendingPlace {
 
