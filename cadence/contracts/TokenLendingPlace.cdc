@@ -66,7 +66,7 @@ pub contract TokenLendingPlace {
     pub var optimalBorrowApy: UFix64
     pub var loanToValueRatio: UFix64
 
-    pub var lendingClollection: @{Address: TokenLendingCollection}
+    access(contract) var lendingCollection: @{Address: TokenLendingCollection}
 
     // The path of protocol
     pub let CollectionStoragePath: StoragePath
@@ -161,8 +161,8 @@ pub contract TokenLendingPlace {
     }
 
     pub fun borrowCollection(address: Address): &TokenLendingCollection? {
-            if self.lendingClollection[address] != nil {
-                return &self.lendingClollection[address] as! &TokenLendingCollection
+            if self.lendingCollection[address] != nil {
+                return &self.lendingCollection[address] as! &TokenLendingCollection
             } else {
                 return nil
             }
@@ -614,7 +614,7 @@ pub contract TokenLendingPlace {
 
     // createCollection returns a new collection resource to the caller
     pub fun createTokenLendingCollection(_cer: Capability<&UserCertificate>) {
-        TokenLendingPlace.lendingClollection[_cer.borrow()!.owner!.address] <-! create TokenLendingCollection( _owner : _cer.borrow()!.owner!.address)
+        TokenLendingPlace.lendingCollection[_cer.borrow()!.owner!.address] <-! create TokenLendingCollection( _owner : _cer.borrow()!.owner!.address)
     }
 
     pub resource Administrator {
@@ -675,7 +675,7 @@ pub contract TokenLendingPlace {
         self.TokenVaultFlow <- FlowToken.createEmptyVault() as! @FlowToken.Vault
         self.TokenVaultFiatToken <- FiatToken.createEmptyVault()
 
-        self.lendingClollection <- {}
+        self.lendingCollection <- {}
 
         self.mFlowInterestRate = 0.0
         self.mFiatTokenInterestRate = 0.0

@@ -16,7 +16,7 @@ transaction(amount: UFix64) {
       acct.link<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath, target: TokenLendingPlace.CertificateStoragePath)
     }
 
-    if TokenLendingPlace.lendingClollection[acct.address] == nil {
+    if TokenLendingPlace.borrowCollection(address: acct.address) == nil {
       let userCertificateCap = acct.getCapability<&TokenLendingPlace.UserCertificate>(TokenLendingPlace.CertificatePrivatePath)
       TokenLendingPlace.createTokenLendingCollection(_cer: userCertificateCap)
     }
