@@ -258,7 +258,7 @@ pub contract TokenLendingPlace {
                 self.mFlow = self.mFlow + (balance / TokenLendingPlace.getmFlowTokenPrice())
                  // event
                 emit Mint(
-                    minter: self.owner?.address,
+                    minter: self.ownerAddress,
                     kind: FlowToken.getType(),
                     mintAmount: balance,
                     mintTokens: balance / TokenLendingPlace.getmFlowTokenPrice()
@@ -269,7 +269,7 @@ pub contract TokenLendingPlace {
                 self.mFiatToken = self.mFiatToken + (balance / TokenLendingPlace.getmFiatTokenTokenPrice())
                  // event
                 emit Mint(
-                    minter: self.owner?.address,
+                    minter: self.ownerAddress,
                     kind: FlowToken.getType(),
                     mintAmount: balance,
                     mintTokens: balance / TokenLendingPlace.getmFiatTokenTokenPrice()
@@ -295,7 +295,7 @@ pub contract TokenLendingPlace {
 
                 // event
                 emit Redeem(
-                    redeemer: self.owner?.address,
+                    redeemer: self.ownerAddress,
                     kind: FlowToken.getType(),
                     redeemAmount: _amount,
                     redeemTokens: _amount / TokenLendingPlace.getmFlowTokenPrice()
@@ -312,7 +312,7 @@ pub contract TokenLendingPlace {
 
                 // event
                 emit Redeem(
-                    redeemer: self.owner?.address,
+                    redeemer: self.ownerAddress,
                     kind: FiatToken.getType(),
                     redeemAmount: _amount,
                     redeemTokens: _amount / TokenLendingPlace.getmFiatTokenTokenPrice()
@@ -374,7 +374,7 @@ pub contract TokenLendingPlace {
 
             // event         
             emit Borrow(
-                borrower: self.owner?.address,
+                borrower: self.ownerAddress,
                 kind: FlowToken.getType(),
                 borrowAmount: _amount
             )
@@ -403,7 +403,7 @@ pub contract TokenLendingPlace {
 
             // event         
             emit Borrow(
-                borrower: self.owner?.address,
+                borrower: self.ownerAddress,
                 kind: FiatToken.getType(),
                 borrowAmount: _amount
             )
@@ -426,7 +426,7 @@ pub contract TokenLendingPlace {
             
             // event
             emit RepayBorrow(
-                payer: from.owner?.address,
+                payer: self.ownerAddress,
                 borrower: self.owner?.address,
                 kind: FlowToken.getType(),
                 repayAmount: from.balance
@@ -450,7 +450,7 @@ pub contract TokenLendingPlace {
             
             // event
             emit RepayBorrow(
-                payer: from.owner?.address,
+                payer: self.ownerAddress,
                 borrower: self.owner?.address,
                 kind: FiatToken.getType(),
                 repayAmount: from.balance
