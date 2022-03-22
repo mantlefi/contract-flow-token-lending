@@ -426,8 +426,8 @@ pub contract TokenLendingPlace {
             
             // event
             emit RepayBorrow(
-                payer: self.ownerAddress,
-                borrower: self.owner?.address,
+                payer: from.owner?.address,
+                borrower: self.ownerAddress,
                 kind: FlowToken.getType(),
                 repayAmount: from.balance
             )
@@ -450,8 +450,8 @@ pub contract TokenLendingPlace {
             
             // event
             emit RepayBorrow(
-                payer: self.ownerAddress,
-                borrower: self.owner?.address,
+                payer: from.owner?.address,
+                borrower: self.ownerAddress,
                 kind: FiatToken.getType(),
                 repayAmount: from.balance
             )
@@ -463,10 +463,12 @@ pub contract TokenLendingPlace {
 
         // Check if the borrowing amount over the loan limit
         pub fun checkBorrowValid() {
-            assert(
-                self.getMyTotalborrow() / self.getMyTotalsupply() < TokenLendingPlace.loanToValueRatio, 
-                message: "It's greater than loanToValueRatio"
-            )
+            if( self.getMyTotalborrow() != 0.0 ) {
+                assert(
+                    self.getMyTotalborrow() / self.getMyTotalsupply() < TokenLendingPlace.loanToValueRatio, 
+                    message: "It's greater than loanToValueRatio"
+                )
+            }
         }
 
         // Check if the borrowing amount over the UtilizationRate
@@ -507,7 +509,7 @@ pub contract TokenLendingPlace {
                 // event
                 emit LiquidateBorrow(
                     liquidator: from.owner?.address,
-                    borrower: self.owner?.address,
+                    borrower: self.ownerAddress,
                     kindRepay: FlowToken.getType(),
                     kindSeize: FlowToken.getType(),
                     repayAmount: from.balance,
@@ -531,7 +533,7 @@ pub contract TokenLendingPlace {
                 // event
                 emit LiquidateBorrow(
                     liquidator: from.owner?.address,
-                    borrower: self.owner?.address,
+                    borrower: self.ownerAddress,
                     kindRepay: FiatToken.getType(),
                     kindSeize: FlowToken.getType(),
                     repayAmount: from.balance,
@@ -560,7 +562,7 @@ pub contract TokenLendingPlace {
                 // event
                 emit LiquidateBorrow(
                     liquidator: from.owner?.address,
-                    borrower: self.owner?.address,
+                    borrower: self.ownerAddress,
                     kindRepay: FlowToken.getType(),
                     kindSeize: FiatToken.getType(),
                     repayAmount: from.balance,
@@ -583,7 +585,7 @@ pub contract TokenLendingPlace {
                 // event
                 emit LiquidateBorrow(
                     liquidator: from.owner?.address,
-                    borrower: self.owner?.address,
+                    borrower: self.ownerAddress,
                     kindRepay: FiatToken.getType(),
                     kindSeize: FiatToken.getType(),
                     repayAmount: from.balance,
